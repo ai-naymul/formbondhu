@@ -1,1 +1,86 @@
-<!doctype html><title>FormBondhu</title>
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FormBondhu</title>
+  <meta name="description" content="Check a university paper form before the trip to the office. Gemma 4 finds what will get it returned and explains the fix in Bangla.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='10' fill='none' stroke='%230b5d3b' stroke-width='7'/%3E%3Cpath d='M20 33l9 9 16-19' fill='none' stroke='%230b5d3b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <h1><span class="bn">ফর্মবন্ধু</span> <span class="en">FormBondhu</span></h1>
+      <p class="lede">অফিসে যাওয়ার আগে ফর্মটা মিলিয়ে নিন। Gemma 4 দেখে বলে দেবে কোথায় ভুল, আর কীভাবে ঠিক করবেন।</p>
+      <p class="lede-en">Check your paper form before the trip to the office. Gemma 4 finds what will get it returned and tells you how to fix it.</p>
+    </div>
+  </header>
+
+  <section class="engine wrap" aria-label="Engine">
+    <label for="engine-select" class="engine-label">মডেল <span class="en">Engine</span></label>
+    <select id="engine-select"></select>
+    <p id="engine-note" class="engine-note"></p>
+  </section>
+
+  <main class="wrap layout">
+    <section class="input-pane" aria-label="Form input">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-snap" aria-selected="true" aria-controls="pane-snap">ফর্মের ছবি দিন<span class="en">Photo of a form</span></button>
+        <button role="tab" id="tab-maker" aria-selected="false" aria-controls="pane-maker">ফর্ম বানিয়ে দেখুন<span class="en">Form maker</span></button>
+      </div>
+
+      <div id="pane-snap" role="tabpanel" aria-labelledby="tab-snap">
+        <label class="drop" for="photo-input">
+          <input id="photo-input" type="file" accept="image/*" capture="environment">
+          <span class="drop-title">ছবি তুলুন বা আপলোড করুন</span>
+          <span class="en">Take or upload a photo of the filled form</span>
+        </label>
+        <p class="hint">চেনা ফর্ম: <span id="known-forms"></span></p>
+      </div>
+
+      <div id="pane-maker" role="tabpanel" aria-labelledby="tab-maker" hidden>
+        <label class="field-row" for="card-select">
+          <span>কোন ফর্ম <span class="en">Which form</span></span>
+          <select id="card-select"></select>
+          <span class="en" id="card-title-en"></span>
+        </label>
+        <div id="maker-fields" class="maker-fields"></div>
+        <div id="maker-signatures" class="maker-signatures"></div>
+        <label class="check-row" id="photo-row">
+          <input type="checkbox" id="photo-toggle" checked>
+          <span>ছবি লাগানো আছে <span class="en">Photo attached</span></span>
+        </label>
+        <div class="maker-actions">
+          <button type="button" class="ghost" id="plant-mistakes">৩টি ভুল বসান<span class="en">Add 3 mistakes</span></button>
+          <button type="button" class="ghost" id="fill-correct">সব ঠিকঠাক করুন<span class="en">Fill it correctly</span></button>
+        </div>
+      </div>
+
+      <figure class="sheet" id="sheet" hidden>
+        <img id="preview" alt="The form that will be checked">
+        <div class="stamp" id="stamp" hidden></div>
+      </figure>
+
+      <button type="button" class="primary" id="check-btn" disabled>ফর্ম যাচাই করুন<span class="en">Check this form</span></button>
+    </section>
+
+    <section class="output-pane" aria-label="Check result">
+      <div class="slip">
+        <h2>যাচাইয়ের ধাপ <span class="en">How the check runs</span></h2>
+        <ol id="trace" class="trace" aria-live="polite"></ol>
+      </div>
+      <div id="result" class="result" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। <span class="en">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
