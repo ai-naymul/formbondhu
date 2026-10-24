@@ -11,6 +11,7 @@ from pathlib import Path
 
 RULES_DIR = Path(__file__).resolve().parent.parent / "rules"
 MATCH_THRESHOLD = 0.6
+BANGLA_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
 
 
 def load_cards(rules_dir=RULES_DIR):
@@ -74,7 +75,9 @@ def map_fields(card, extracted_fields):
         if best is None or best_score < MATCH_THRESHOLD:
             mapped[field["key"]] = None
         else:
-            mapped[field["key"]] = "" if best.get("is_empty") else (best.get("value") or "").strip()
+            # Students often write numbers in Bangla digits (২৬/১০/২০২৬); rules compare the digits, not the script.
+            value = "" if best.get("is_empty") else (best.get("value") or "").strip()
+            mapped[field["key"]] = value.translate(BANGLA_DIGITS)
     return mapped
 
 
@@ -97,10 +100,12 @@ def _signature_inked(card, sig_key, boxes):
 
 
 def _valid_date(value):
-    if not re.fullmatch(r"\d{2}/\d{2}/\d{4}", value):
+    """DD/MM/YYYY with "/", "." or "-" as the separator; a two-digit year or a one-digit day or month is not accepted."""
+    match = re.fullmatch(r"(\d{2})[/.-](\d{2})[/.-](\d{4})", value)
+    if not match:
         return False
     try:
-        datetime.strptime(value, "%d/%m/%Y")
+        datetime.strptime("/".join(match.groups()), "%d/%m/%Y")
         return True
     except ValueError:
         return False

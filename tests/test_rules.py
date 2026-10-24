@@ -139,3 +139,19 @@ def test_explanations_cannot_invent_problems():
     merged = merge_explanations(flags, items)
     assert [m["rule_id"] for m in merged] == ["TR-5"] and merged[0]["fix_bn"] == "model fix"
     assert merge_explanations(flags, [])[0]["fix_bn"] == "card text"
+
+
+@pytest.mark.parametrize("written,ok", [
+    ("২৬/১০/২০২৬", True), ("26.10.2026", True), ("26-10-2026", True), ("২৬-১০-২৬", False),
+    ("5/11/26", False), ("31/02/2026", False),
+])
+def test_dates_accept_bangla_digits_and_common_separators(written, ok):
+    card = CARDS["leave_letter"]
+    flags, _ = audit(card, set_field(copy.deepcopy(clean_extraction(card)), "date", card, written))
+    assert ("LV-2" in [f["rule_id"] for f in flags]) is not ok
+
+
+def test_bangla_digit_student_id_is_read_as_digits():
+    card = CARDS["transcript_letter"]
+    flags, _ = audit(card, set_field(copy.deepcopy(clean_extraction(card)), "student_id", card, "C২৩১০৪৫"))
+    assert flags == []
