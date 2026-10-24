@@ -16,13 +16,25 @@
     <div class="wrap">
       <h1><span class="bn">ফর্মবন্ধু</span> <span class="en">FormBondhu</span></h1>
       <p class="lede">অফিসে যাওয়ার আগে ফর্মটা মিলিয়ে নিন। Gemma 4 দেখে বলে দেবে কোথায় ভুল, আর কীভাবে ঠিক করবেন।</p>
-      <p class="lede-en">Check your paper form before the trip to the office. Gemma 4 finds what will get it returned and tells you how to fix it.</p>
+      <p class="lede-en">Check your paper form or application letter before the trip to the office. Gemma 4 finds what will get it returned and tells you how to fix it.</p>
+      <details class="how">
+        <summary>Gemma কীভাবে যাচাই করে <span class="en">How the AI harness works</span></summary>
+        <ol class="how-steps">
+          <li><b>পড়া</b> Gemma 4 ছবি দেখে বোঝে এটা ফর্ম না দরখাস্ত, আর প্রতিটি লেখা হুবহু তুলে আনে। <span class="en">Read: Gemma 4 decides whether it is a form or a letter and copies every value exactly as written, plus signature and photo boxes.</span></li>
+          <li><b>মেলানো</b> কোড নথিটিকে একটি নিয়মের কার্ডের সাথে মেলায়; অচেনা নথি হলে সোজাসুজি বলে দেয়। <span class="en">Match: code picks the rule card; an unknown document is refused, never guessed.</span></li>
+          <li><b>যাচাই</b> কোড কার্ডের প্রতিটি নিয়ম মেলায়: তারিখ, আইডি, মোবাইল নম্বর, সঠিক অফিস, স্বাক্ষর। <span class="en">Check: code applies every rule on the card: dates, IDs, phone numbers, the right office, signatures.</span></li>
+          <li><b>আবার দেখা</b> Gemma 4 প্রতিটি সমস্যা ছবিতে আবার দেখে নিশ্চিত করে। <span class="en">Double-check: Gemma 4 looks at the image again; anything it cannot confirm goes to "check yourself".</span></li>
+          <li><b>সমাধান</b> Gemma 4 শুধু নিয়মের লেখা ব্যবহার করে বাংলায় সমাধান লেখে। <span class="en">Fix: Gemma 4 explains each fix in Bangla using only the rule's own text.</span></li>
+          <li><b>দরখাস্ত</b> দরখাস্তের বেলায় Gemma 4 আপনার তথ্য দিয়েই সংশোধিত চিঠি লেখে; কোড পরীক্ষা করে কোনো বানানো আইডি ঢুকল কি না। <span class="en">Draft: for letters, Gemma 4 rewrites the letter from your own details; code removes any student ID the model made up.</span></li>
+        </ol>
+        <p class="how-rule">Gemma দেখে, কোড সিদ্ধান্ত নেয়। <span class="en">Gemma sees, code decides: every problem points to a written rule, the second look can only remove problems, and fees or offices come only from the rule cards.</span></p>
+      </details>
     </div>
   </header>
 
   <section class="engine wrap" aria-label="Engine">
-    <label for="engine-select" class="engine-label">মডেল <span class="en">Engine</span></label>
-    <select id="engine-select"></select>
+    <p class="engine-label" id="engine-label">মডেল <span class="en">Engine</span></p>
+    <div id="engine-chips" class="chips engine-chips" role="radiogroup" aria-labelledby="engine-label"></div>
     <p id="engine-note" class="engine-note"></p>
   </section>
 
@@ -37,17 +49,17 @@
         <label class="drop" for="photo-input">
           <input id="photo-input" type="file" accept="image/*" capture="environment">
           <span class="drop-title">ছবি তুলুন বা আপলোড করুন</span>
-          <span class="en">Take or upload a photo of the filled form</span>
+          <span class="en">Take or upload a photo of the filled form or your application letter</span>
         </label>
-        <p class="hint">চেনা ফর্ম: <span id="known-forms"></span></p>
+        <p class="hint">চেনা ফর্ম ও দরখাস্ত: <span id="known-forms"></span></p>
       </div>
 
       <div id="pane-maker" role="tabpanel" aria-labelledby="tab-maker" hidden>
-        <label class="field-row" for="card-select">
-          <span>কোন ফর্ম <span class="en">Which form</span></span>
-          <select id="card-select"></select>
-          <span class="en" id="card-title-en"></span>
-        </label>
+        <div class="field-row">
+          <span id="card-label">কী যাচাই করবেন <span class="en">What to check</span></span>
+          <div id="card-chips" class="card-chips" role="radiogroup" aria-labelledby="card-label"></div>
+          <p class="card-source" id="card-source"></p>
+        </div>
         <div id="maker-fields" class="maker-fields"></div>
         <div id="maker-signatures" class="maker-signatures"></div>
         <label class="check-row" id="photo-row">

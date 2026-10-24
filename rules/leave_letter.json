@@ -1,0 +1,172 @@
+{
+  "id": "leave_letter",
+  "kind": "letter",
+  "sample_data": true,
+  "audience_en": "Student",
+  "audience_bn": "শিক্ষার্থী",
+  "source": "Sample leave application in the usual Bangladeshi university format; the checks and route are samples.",
+  "title_en": "Application letter for leave of absence",
+  "title_bn": "ছুটির জন্য দরখাস্ত",
+  "aliases": [
+    "leave of absence",
+    "application for leave",
+    "leave application",
+    "ছুটির আবেদন",
+    "ছুটি"
+  ],
+  "office_en": "Department Office",
+  "addressee_en": "The Chairman, Department of {department}, International Islamic University Chittagong",
+  "addressee_bn": "চেয়ারম্যান, {department} বিভাগ, ইন্টারন্যাশনাল ইসলামিক ইউনিভার্সিটি চট্টগ্রাম",
+  "fields": [
+    {
+      "key": "addressee",
+      "label_en": "Addressee",
+      "label_bn": "প্রাপক",
+      "sample": "The Chairman, Department of CSE, IIUC"
+    },
+    {
+      "key": "date",
+      "label_en": "Date",
+      "label_bn": "তারিখ",
+      "sample": "24/10/2026"
+    },
+    {
+      "key": "subject",
+      "label_en": "Subject",
+      "label_bn": "বিষয়",
+      "sample": "Application for leave of absence"
+    },
+    {
+      "key": "leave_dates",
+      "label_en": "Leave Dates",
+      "label_bn": "ছুটির তারিখ",
+      "sample": "26/10/2026 to 28/10/2026"
+    },
+    {
+      "key": "reason",
+      "label_en": "Reason",
+      "label_bn": "কারণ",
+      "sample": "my sister's wedding in Cumilla"
+    },
+    {
+      "key": "student_name",
+      "label_en": "Student Name",
+      "label_bn": "নাম",
+      "sample": "Tanvir Hasan"
+    },
+    {
+      "key": "student_id",
+      "label_en": "Student ID",
+      "label_bn": "আইডি",
+      "sample": "C221187"
+    },
+    {
+      "key": "department",
+      "label_en": "Department",
+      "label_bn": "বিভাগ",
+      "sample": "CSE"
+    },
+    {
+      "key": "semester",
+      "label_en": "Semester",
+      "label_bn": "সেমিস্টার",
+      "sample": "5th"
+    }
+  ],
+  "body_template_en": "I am a student of the Department of {department}, {semester} semester. I need leave from {leave_dates} because of {reason}. I will make up the classes I miss. I therefore pray that you would kindly grant me leave for these days.",
+  "signatures": [
+    {
+      "key": "student",
+      "label_en": "Student's Signature",
+      "label_bn": "শিক্ষার্থীর স্বাক্ষর"
+    }
+  ],
+  "photo_required": false,
+  "rules": [
+    {
+      "id": "LV-1",
+      "type": "contains_any",
+      "field": "addressee",
+      "any": [
+        "chairman",
+        "head of",
+        "course teacher",
+        "চেয়ারম্যান",
+        "বিভাগীয় প্রধান",
+        "কোর্স শিক্ষক"
+      ],
+      "en": "Leave applications go to the department chairman or your course teacher.",
+      "bn": "ছুটির দরখাস্ত বিভাগের চেয়ারম্যান বা কোর্স শিক্ষক বরাবর লিখতে হয়।"
+    },
+    {
+      "id": "LV-2",
+      "type": "date",
+      "field": "date",
+      "en": "Date must be written as DD/MM/YYYY, e.g. 24/10/2026.",
+      "bn": "তারিখ দিন/মাস/বছর (DD/MM/YYYY) ফরম্যাটে লিখতে হবে, যেমন 24/10/2026।"
+    },
+    {
+      "id": "LV-3",
+      "type": "required",
+      "field": "leave_dates",
+      "en": "The letter does not say which days you need off.",
+      "bn": "কোন কোন দিন ছুটি লাগবে তা লেখা নেই।"
+    },
+    {
+      "id": "LV-4",
+      "type": "required",
+      "field": "reason",
+      "en": "The reason for leave is missing.",
+      "bn": "ছুটির কারণ লেখা নেই।"
+    },
+    {
+      "id": "LV-5",
+      "type": "pattern",
+      "field": "student_id",
+      "pattern": "^[A-Z]\\d{6}$",
+      "en": "Student ID is missing or not in the right format (one capital letter and 6 digits, e.g. C221187).",
+      "bn": "আইডি নম্বর নেই বা সঠিক ফরম্যাটে নেই। একটি ইংরেজি বড় হাতের অক্ষর ও ৬টি সংখ্যা লিখুন, যেমন C221187।"
+    },
+    {
+      "id": "LV-6",
+      "type": "required",
+      "field": "department",
+      "en": "Department is missing.",
+      "bn": "বিভাগের নাম লেখা হয়নি।"
+    },
+    {
+      "id": "LV-7",
+      "type": "signature",
+      "signature": "student",
+      "en": "The letter is not signed.",
+      "bn": "চিঠিতে আপনার স্বাক্ষর নেই।"
+    }
+  ],
+  "attachments": [
+    {
+      "en": "Supporting document if you have one (e.g. invitation card or medical certificate)",
+      "bn": "প্রমাণপত্র থাকলে (যেমন দাওয়াতপত্র বা মেডিকেল সার্টিফিকেট)"
+    }
+  ],
+  "route": [
+    {
+      "office_en": "Department Office",
+      "office_bn": "বিভাগীয় অফিস",
+      "task_en": "Submit the letter to the chairman for approval.",
+      "task_bn": "অনুমোদনের জন্য চেয়ারম্যানের কাছে দরখাস্ত জমা দিন।"
+    },
+    {
+      "office_en": "Course Teachers",
+      "office_bn": "কোর্স শিক্ষক",
+      "task_en": "Show the approved letter to the teachers whose classes you will miss.",
+      "task_bn": "যে ক্লাসগুলো মিস হবে, সেই শিক্ষকদের অনুমোদিত দরখাস্ত দেখান।"
+    }
+  ],
+  "demo_mistakes": {
+    "set": {
+      "addressee": "The Proctor, IIUC",
+      "leave_dates": "",
+      "date": "26-10-26"
+    }
+  }
+}

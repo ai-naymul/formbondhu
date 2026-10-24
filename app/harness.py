@@ -4,12 +4,14 @@ Gemma 4 does the seeing and the Bangla writing; plain code does the deciding. ru
 generator of trace events so the UI can show every step, its model or tool, and its timing as it happens.
 """
 import asyncio
+import json
+import re
 import time
 
 from pydantic import BaseModel, ValidationError
 
 from app.gemma import GemmaError, generate_json
-from app.rules import apply_verification, audit, match_card, merge_explanations
+from app.rules import apply_verification, audit, map_fields, match_card, merge_explanations
 
 
 class FieldRead(BaseModel):
@@ -30,6 +32,8 @@ class PhotoRead(BaseModel):
 
 
 class Extraction(BaseModel):
+    doc_type: str = "form"
+    language: str = "en"
     form_title: str
     fields: list[FieldRead]
     signature_boxes: list[SignatureRead] = []
@@ -56,15 +60,31 @@ class Fixes(BaseModel):
     items: list[Fix]
 
 
-READ_PROMPT = """You are the perception step of FormBondhu, a tool that checks university paper forms before students submit them.
-Look at the image of the form and report ONLY what is visibly there. Do not judge whether anything is correct.
-- Copy every handwritten or typed value EXACTLY as written, character for character. Keep dates exactly as written (12/3/26 stays 12/3/26).
-- For every field row give the printed English label and the printed Bangla label if there is one.
-- If a field has nothing written in it, use value "" and is_empty true.
-- signature_boxes: every place meant for a signature, labelled with its printed caption. has_ink is true only if pen strokes or a drawn signature are visible there.
-- photo_box: present is true if the form has a box for a photo. filled is true if a photo or any picture is pasted or drawn inside it; false if it is blank or only shows placeholder text.
+class Draft(BaseModel):
+    language: str = "bn"
+    letter: str
+    placeholders: list[str] = []
+
+
+LETTER_SLOTS = ["Addressee", "Date", "Subject", "Request", "Leave Dates", "Reason",
+                "Student Name", "Student ID", "Department", "Semester"]
+
+READ_PROMPT = """You are the perception step of FormBondhu, a tool that checks university paperwork before students submit it.
+First decide what the document is:
+- "form": a printed form with labelled boxes or rows to fill in.
+- "letter": a written application letter (দরখাস্ত) addressed to an official, in Bangla, English or Banglish, handwritten or typed.
+Report ONLY what is visibly there. Do not judge whether anything is correct.
+- Copy written values EXACTLY as written, character for character. Keep dates exactly as written (12/3/26 stays 12/3/26).
+- If something is not written, use value "" and is_empty true.
+For a form: form_title is the main printed title; give one entry per field row with its printed English label and the printed Bangla label if any.
+For a letter: form_title is the subject line exactly as written (or the main request if there is no subject line). Give exactly one entry for each of
+these label_en values, in this order: {slots}. Addressee is the "To"/"বরাবর" lines (designation and office). Request is one short phrase saying what is asked for.
+Copy each value from the letter in its original language; leave it "" if the letter does not contain it.
+- signature_boxes: every place meant for a signature, labelled with its printed caption (for a letter, use "Student's Signature" for the sender's signature). has_ink is true only if pen strokes or a drawn signature are visible there.
+- photo_box: present is true if there is a box for a photo; filled is true if a photo or any picture is inside it.
+- language: "bn", "en" or "mixed", the main language the student wrote in.
 Return JSON exactly in this shape:
-{"form_title": "main printed title", "fields": [{"label_en": "", "label_bn": "", "value": "", "is_empty": false}], "signature_boxes": [{"label": "", "has_ink": false}], "photo_box": {"present": false, "filled": false}}"""
+{{"doc_type": "form", "language": "en", "form_title": "", "fields": [{{"label_en": "", "label_bn": "", "value": "", "is_empty": false}}], "signature_boxes": [{{"label": "", "has_ink": false}}], "photo_box": {{"present": false, "filled": false}}}}""".format(slots=", ".join(LETTER_SLOTS))
 
 VERIFY_PROMPT = """You are the double-check step of FormBondhu. A rule engine flagged the possible problems below on this form.
 Look at the image again carefully for each one. Confirm a problem only if you can actually see it in the image.
@@ -83,12 +103,24 @@ Problems:
 {problems}
 Return JSON: {{"items": [{{"rule_id": "", "bn": "", "en": ""}}]}}"""
 
+DRAFT_PROMPT = """You help a student at International Islamic University Chittagong rewrite an application letter so the office accepts it.
+Write the complete corrected letter in {language}, in the usual Bangladeshi university application format:
+date, then "To"/"বরাবর" and the addressee lines, subject line, salutation, body, closing, signature line, then name, ID, department and semester.
+Address it to: {addressee}
+Fix these problems:
+{problems}
+Keep every detail the student gave (purpose, dates, reasons). Use ONLY facts from the student's letter below. Where something required is missing, write a placeholder in square brackets,
+e.g. [your student ID] or [আপনার আইডি নম্বর]. Never invent names, IDs, dates, reasons or fees. Write numbers and IDs in English digits.
+Student's letter as read: {facts}
+Return JSON: {{"language": "bn or en", "letter": "the full letter with \\n line breaks", "placeholders": ["each placeholder you used"]}}"""
+
 STEP_TITLES = {
     "read": ("Read the form", "ফর্ম পড়া"),
     "match": ("Match the rule card", "নিয়মের কার্ড মেলানো"),
     "audit": ("Check every rule", "প্রতিটি নিয়ম যাচাই"),
     "verify": ("Double-check each problem", "প্রতিটি সমস্যা আবার দেখা"),
     "explain": ("Write fixes in Bangla", "বাংলায় সমাধান লেখা"),
+    "draft": ("Draft the corrected letter", "সংশোধিত দরখাস্ত লেখা"),
 }
 
 
@@ -118,6 +150,24 @@ async def _named(name, coro):
     return name, await coro
 
 
+STUDENT_ID = re.compile(r"\b[A-Z]\d{6}\b")
+
+
+def ground_draft(draft, read_id):
+    """Code-side check on the model's letter: any student ID it wrote must be the one read from the original.
+
+    Returns (letter, replaced) where invented IDs are swapped for a visible placeholder.
+    """
+    replaced = [m for m in STUDENT_ID.findall(draft) if m != read_id]
+    letter = STUDENT_ID.sub(lambda m: m.group(0) if m.group(0) == read_id else "[আইডি যাচাই করুন / check ID]", draft)
+    return letter, replaced
+
+
+def _addressee(card, values):
+    lang_bn = card.get("addressee_bn", "")
+    return (card.get("addressee_en", "") + " / " + lang_bn).replace("{department}", values.get("department") or "[department]")
+
+
 async def run(image, mime, cards, engine):
     """engine = {"backend": "aistudio" | "ollama", "model": str}; it is used for every model call and echoed in every event."""
     started = time.perf_counter()
@@ -127,9 +177,10 @@ async def run(image, mime, cards, engine):
         ext = extraction.model_dump()
         yield _step("read", "done", "model", **meta, output=ext)
 
-        card, score = match_card(ext["form_title"], cards)
+        card, score = match_card(ext["form_title"], cards, ext["doc_type"])
         yield _step("match", "done", "code", tool="match_card",
-                    output={"form_title": ext["form_title"], "card": card and card["id"], "score": round(score, 2)})
+                    output={"doc_type": ext["doc_type"], "form_title": ext["form_title"], "card": card and card["id"],
+                            "score": round(score, 2)})
         if card is None:
             yield {"type": "result", "status": "unknown_form", "form_title": ext["form_title"],
                    "known": [{"title_en": c["title_en"], "title_bn": c["title_bn"]} for c in cards.values()], "engine": engine,
@@ -140,7 +191,7 @@ async def run(image, mime, cards, engine):
         yield _step("audit", "done", "code", tool="audit",
                     output={"flagged": [f["rule_id"] for f in flags], "passed": [p["rule_id"] for p in passed]})
 
-        confirmed, manual = [], []
+        confirmed, manual, draft = [], [], None
         if flags:
             problems = _problem_lines(flags)
             yield _step("verify", "start", "model", **engine)
@@ -148,19 +199,32 @@ async def run(image, mime, cards, engine):
             tasks = [_named("verify", call_validated(VERIFY_PROMPT.format(problems=problems), Checks, engine, image=image, mime=mime)),
                      _named("explain", call_validated(EXPLAIN_PROMPT.format(problems=problems, title_en=card["title_en"],
                                                                             title_bn=card["title_bn"]), Fixes, engine))]
+            if card.get("kind") == "letter":
+                values = map_fields(card, ext["fields"])
+                language = "formal English" if ext["language"] == "en" else "formal standard Bangla (চলিত ভাষা)"
+                facts = {f["label_en"]: values.get(f["key"]) or "" for f in card["fields"]}
+                yield _step("draft", "start", "model", **engine)
+                tasks.append(_named("draft", call_validated(
+                    DRAFT_PROMPT.format(language=language, addressee=_addressee(card, values), problems=problems,
+                                        facts=json.dumps(facts, ensure_ascii=False)), Draft, engine)))
             results = {}
             for next_done in asyncio.as_completed(tasks):
                 name, (parsed, meta) = await next_done
                 results[name] = parsed
-                yield _step(name, "done", "model", **meta, output=parsed.model_dump())
+                output = parsed.model_dump()
+                if name == "draft":
+                    letter, replaced = ground_draft(parsed.letter, values.get("student_id") or "")
+                    draft = {**output, "letter": letter, "invented_ids_removed": replaced}
+                    output = {**draft, "grounding_check": "passed" if not replaced else f"replaced {len(replaced)} invented ID(s)"}
+                yield _step(name, "done", "model", **meta, output=output)
             confirmed, manual = apply_verification(flags, [c.model_dump() for c in results["verify"].checks])
             fixes = [i.model_dump() for i in results["explain"].items]
             confirmed, manual = merge_explanations(confirmed, fixes), merge_explanations(manual, fixes)
 
         yield {"type": "result", "status": "problems" if confirmed else ("check_manually" if manual else "ready"),
-               "card": {k: card[k] for k in ("id", "title_en", "title_bn", "office_en", "sample_data")},
+               "card": {k: card.get(k) for k in ("id", "kind", "title_en", "title_bn", "office_en", "sample_data", "source")},
                "problems": confirmed, "manual": manual, "passed": passed,
-               "attachments": card["attachments"], "route": card["route"], "engine": engine,
+               "attachments": card["attachments"], "route": card["route"], "engine": engine, "draft": draft,
                "ms": round((time.perf_counter() - started) * 1000)}
     except (GemmaError, ValidationError) as exc:
         yield {"type": "error", "message": str(exc)}

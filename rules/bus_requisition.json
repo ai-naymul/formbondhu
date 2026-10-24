@@ -1,0 +1,179 @@
+{
+  "id": "bus_requisition",
+  "kind": "form",
+  "sample_data": true,
+  "audience_en": "Department or club",
+  "audience_bn": "বিভাগ বা ক্লাব",
+  "source": "Field list from IIUC's online Bus Requisition Form (iiuc.ac.bd/bus-requisition-form.html); the checks and route are samples.",
+  "title_en": "Bus Requisition Form",
+  "title_bn": "বাস রিকুইজিশন ফরম",
+  "aliases": [
+    "bus requisition",
+    "requisition for bus",
+    "বাস রিকুইজিশন"
+  ],
+  "office_en": "Transport Office",
+  "fields": [
+    {
+      "key": "date",
+      "label_en": "Date",
+      "label_bn": "তারিখ",
+      "sample": "24/10/2026"
+    },
+    {
+      "key": "department",
+      "label_en": "Department",
+      "label_bn": "বিভাগ",
+      "sample": "CSE"
+    },
+    {
+      "key": "purpose",
+      "label_en": "Purpose",
+      "label_bn": "উদ্দেশ্য",
+      "sample": "Industrial visit, CSE 7th semester"
+    },
+    {
+      "key": "required_bus_date",
+      "label_en": "Required Bus Date",
+      "label_bn": "বাস প্রয়োজনের তারিখ",
+      "sample": "02/11/2026"
+    },
+    {
+      "key": "required_time",
+      "label_en": "Required Time",
+      "label_bn": "সময়",
+      "sample": "8:00 AM"
+    },
+    {
+      "key": "number_of_buses",
+      "label_en": "Number of Buses",
+      "label_bn": "বাসের সংখ্যা",
+      "sample": "2"
+    },
+    {
+      "key": "total_passengers",
+      "label_en": "Total Passengers",
+      "label_bn": "মোট যাত্রী",
+      "sample": "85"
+    },
+    {
+      "key": "sender_name",
+      "label_en": "Sender Name",
+      "label_bn": "প্রেরকের নাম",
+      "sample": "Md. Arif Hossain"
+    },
+    {
+      "key": "mobile_number",
+      "label_en": "Mobile Number",
+      "label_bn": "মোবাইল নম্বর",
+      "sample": "01712345678"
+    },
+    {
+      "key": "email_address",
+      "label_en": "Email Address",
+      "label_bn": "ইমেইল",
+      "sample": "arif.cse@example.com"
+    },
+    {
+      "key": "remarks",
+      "label_en": "Remarks (Optional)",
+      "label_bn": "মন্তব্য (ঐচ্ছিক)",
+      "sample": "Pickup from the main gate"
+    }
+  ],
+  "signatures": [],
+  "photo_required": false,
+  "rules": [
+    {
+      "id": "BR-1",
+      "type": "date",
+      "field": "date",
+      "en": "Date must be written as DD/MM/YYYY.",
+      "bn": "তারিখ দিন/মাস/বছর (DD/MM/YYYY) ফরম্যাটে লিখুন।"
+    },
+    {
+      "id": "BR-2",
+      "type": "required",
+      "field": "department",
+      "en": "Department is missing.",
+      "bn": "বিভাগের নাম লেখা হয়নি।"
+    },
+    {
+      "id": "BR-3",
+      "type": "required",
+      "field": "purpose",
+      "en": "Purpose of the trip is missing.",
+      "bn": "বাস কেন লাগবে, সেই উদ্দেশ্য লেখা হয়নি।"
+    },
+    {
+      "id": "BR-4",
+      "type": "date",
+      "field": "required_bus_date",
+      "en": "Required bus date must be a real date written as DD/MM/YYYY.",
+      "bn": "কোন তারিখে বাস লাগবে তা দিন/মাস/বছর (DD/MM/YYYY) ফরম্যাটে লিখুন।"
+    },
+    {
+      "id": "BR-5",
+      "type": "pattern",
+      "field": "required_time",
+      "pattern": "^\\d{1,2}:\\d{2}\\s?(AM|PM|am|pm)?$",
+      "en": "Required time must be a clock time such as 8:00 AM.",
+      "bn": "সময় ঘড়ির সময় হিসেবে লিখুন, যেমন 8:00 AM।"
+    },
+    {
+      "id": "BR-6",
+      "type": "pattern",
+      "field": "number_of_buses",
+      "pattern": "^[1-9]\\d*$",
+      "en": "Number of buses must be a number, at least 1.",
+      "bn": "বাসের সংখ্যা সংখ্যায় লিখুন, কমপক্ষে ১।"
+    },
+    {
+      "id": "BR-7",
+      "type": "pattern",
+      "field": "total_passengers",
+      "pattern": "^[1-9]\\d*$",
+      "en": "Total passengers must be a number, at least 1.",
+      "bn": "মোট যাত্রীর সংখ্যা সংখ্যায় লিখুন।"
+    },
+    {
+      "id": "BR-8",
+      "type": "required",
+      "field": "sender_name",
+      "en": "Sender name is missing.",
+      "bn": "প্রেরকের নাম লেখা হয়নি।"
+    },
+    {
+      "id": "BR-9",
+      "type": "pattern",
+      "field": "mobile_number",
+      "pattern": "^(\\+?88)?01[3-9]\\d{8}$",
+      "en": "Mobile number must be an 11-digit Bangladeshi number such as 01712345678.",
+      "bn": "মোবাইল নম্বর ১১ সংখ্যার বাংলাদেশি নম্বর হতে হবে, যেমন 01712345678।"
+    },
+    {
+      "id": "BR-10",
+      "type": "pattern",
+      "field": "email_address",
+      "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+      "en": "Email address is not valid.",
+      "bn": "ইমেইল ঠিকানাটি সঠিক নয়।"
+    }
+  ],
+  "attachments": [],
+  "route": [
+    {
+      "office_en": "Transport Office",
+      "office_bn": "পরিবহন অফিস",
+      "task_en": "Submit the requisition and keep the print preview as proof.",
+      "task_bn": "রিকুইজিশন জমা দিন এবং প্রিন্ট প্রিভিউ প্রমাণ হিসেবে রাখুন।"
+    }
+  ],
+  "demo_mistakes": {
+    "set": {
+      "mobile_number": "0171234567",
+      "required_bus_date": "next Sunday",
+      "total_passengers": ""
+    }
+  }
+}

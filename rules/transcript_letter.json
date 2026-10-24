@@ -1,0 +1,165 @@
+{
+  "id": "transcript_letter",
+  "kind": "letter",
+  "sample_data": true,
+  "audience_en": "Student",
+  "audience_bn": "শিক্ষার্থী",
+  "source": "Transcripts are a Controller of Examinations service at IIUC; the letter checks, fee and route are samples.",
+  "title_en": "Application letter for academic transcript",
+  "title_bn": "ট্রান্সক্রিপ্টের জন্য দরখাস্ত",
+  "aliases": [
+    "application for academic transcript",
+    "application for transcript",
+    "transcript",
+    "ট্রান্সক্রিপ্ট"
+  ],
+  "office_en": "Office of the Controller of Examinations",
+  "addressee_en": "The Controller of Examinations, International Islamic University Chittagong",
+  "addressee_bn": "পরীক্ষা নিয়ন্ত্রক, ইন্টারন্যাশনাল ইসলামিক ইউনিভার্সিটি চট্টগ্রাম",
+  "fields": [
+    {
+      "key": "addressee",
+      "label_en": "Addressee",
+      "label_bn": "প্রাপক",
+      "sample": "The Controller of Examinations, IIUC"
+    },
+    {
+      "key": "date",
+      "label_en": "Date",
+      "label_bn": "তারিখ",
+      "sample": "24/10/2026"
+    },
+    {
+      "key": "subject",
+      "label_en": "Subject",
+      "label_bn": "বিষয়",
+      "sample": "Application for academic transcript"
+    },
+    {
+      "key": "request",
+      "label_en": "Request",
+      "label_bn": "যা চাওয়া হচ্ছে",
+      "sample": "my academic transcript for a higher study application"
+    },
+    {
+      "key": "student_name",
+      "label_en": "Student Name",
+      "label_bn": "নাম",
+      "sample": "Rafiya Akter"
+    },
+    {
+      "key": "student_id",
+      "label_en": "Student ID",
+      "label_bn": "আইডি",
+      "sample": "C231045"
+    },
+    {
+      "key": "department",
+      "label_en": "Department",
+      "label_bn": "বিভাগ",
+      "sample": "EEE"
+    },
+    {
+      "key": "semester",
+      "label_en": "Semester",
+      "label_bn": "সেমিস্টার",
+      "sample": "8th"
+    }
+  ],
+  "body_template_en": "I am a student of the Department of {department}, {semester} semester. I need {request}. I will attach the fee payment slip. I therefore pray that you would kindly issue it at your earliest convenience.",
+  "signatures": [
+    {
+      "key": "student",
+      "label_en": "Student's Signature",
+      "label_bn": "শিক্ষার্থীর স্বাক্ষর"
+    }
+  ],
+  "photo_required": false,
+  "rules": [
+    {
+      "id": "TL-1",
+      "type": "contains_any",
+      "field": "addressee",
+      "any": [
+        "controller of examinations",
+        "পরীক্ষা নিয়ন্ত্রক"
+      ],
+      "en": "Transcript applications go to the Controller of Examinations; this letter is addressed to someone else.",
+      "bn": "ট্রান্সক্রিপ্টের দরখাস্ত পরীক্ষা নিয়ন্ত্রক বরাবর লিখতে হয়; এই চিঠি অন্য কারও বরাবর লেখা।"
+    },
+    {
+      "id": "TL-2",
+      "type": "date",
+      "field": "date",
+      "en": "Date must be written as DD/MM/YYYY, e.g. 24/10/2026.",
+      "bn": "তারিখ দিন/মাস/বছর (DD/MM/YYYY) ফরম্যাটে লিখতে হবে, যেমন 24/10/2026।"
+    },
+    {
+      "id": "TL-3",
+      "type": "required",
+      "field": "subject",
+      "en": "The letter has no subject line.",
+      "bn": "চিঠিতে বিষয় (Subject) লাইন নেই।"
+    },
+    {
+      "id": "TL-4",
+      "type": "required",
+      "field": "request",
+      "en": "The letter does not say what you are asking for.",
+      "bn": "চিঠিতে কী চাইছেন তা পরিষ্কার করে লেখা নেই।"
+    },
+    {
+      "id": "TL-5",
+      "type": "pattern",
+      "field": "student_id",
+      "pattern": "^[A-Z]\\d{6}$",
+      "en": "Student ID is missing or not in the right format (one capital letter and 6 digits, e.g. C231045).",
+      "bn": "আইডি নম্বর নেই বা সঠিক ফরম্যাটে নেই। একটি ইংরেজি বড় হাতের অক্ষর ও ৬টি সংখ্যা লিখুন, যেমন C231045।"
+    },
+    {
+      "id": "TL-6",
+      "type": "required",
+      "field": "department",
+      "en": "Department is missing.",
+      "bn": "বিভাগের নাম লেখা হয়নি।"
+    },
+    {
+      "id": "TL-7",
+      "type": "signature",
+      "signature": "student",
+      "en": "The letter is not signed.",
+      "bn": "চিঠিতে আপনার স্বাক্ষর নেই।"
+    }
+  ],
+  "attachments": [
+    {
+      "en": "Transcript fee payment slip (sample fee: Tk 500)",
+      "bn": "ট্রান্সক্রিপ্ট ফি জমার রসিদ (নমুনা ফি: ৫০০ টাকা)"
+    },
+    {
+      "en": "Photocopy of your student ID card",
+      "bn": "স্টুডেন্ট আইডি কার্ডের ফটোকপি"
+    }
+  ],
+  "route": [
+    {
+      "office_en": "Accounts Section",
+      "office_bn": "হিসাব শাখা",
+      "task_en": "Pay the transcript fee and collect the slip.",
+      "task_bn": "ট্রান্সক্রিপ্ট ফি জমা দিয়ে রসিদ নিন।"
+    },
+    {
+      "office_en": "Office of the Controller of Examinations",
+      "office_bn": "পরীক্ষা নিয়ন্ত্রকের অফিস",
+      "task_en": "Submit the letter with the slip and ID photocopy.",
+      "task_bn": "রসিদ ও আইডির ফটোকপিসহ দরখাস্ত জমা দিন।"
+    }
+  ],
+  "demo_mistakes": {
+    "set": {
+      "addressee": "The Principal, IIUC",
+      "student_id": "",
+      "date": "5/11/26"
+    }
+  }
+}

@@ -42,9 +42,15 @@ MUTATIONS = [
     ("transcript_application", lambda e, c: e["signature_boxes"][0].update(has_ink=False) or e, "TR-6"),
     ("transcript_application", lambda e, c: e["photo_box"].update(filled=False) or e, "TR-7"),
     ("transcript_application", lambda e, c: set_field(e, "date", c, "31/02/2026"), "TR-5"),
-    ("makeup_exam_application", lambda e, c: set_field(e, "course_code", c, "data structures"), "MU-3"),
-    ("makeup_exam_application", lambda e, c: e["signature_boxes"][1].update(has_ink=False) or e, "MU-8"),
-    ("makeup_exam_application", lambda e, c: set_field(e, "missed_exam_date", c, "15-10-2026"), "MU-4"),
+    ("bus_requisition", lambda e, c: set_field(e, "mobile_number", c, "0171234567"), "BR-9"),
+    ("bus_requisition", lambda e, c: set_field(e, "required_bus_date", c, "next Sunday"), "BR-4"),
+    ("bus_requisition", lambda e, c: set_field(e, "total_passengers", c, ""), "BR-7"),
+    ("bus_requisition", lambda e, c: set_field(e, "required_time", c, "8 o'clock"), "BR-5"),
+    ("transcript_letter", lambda e, c: set_field(e, "addressee", c, "The Principal, IIUC"), "TL-1"),
+    ("transcript_letter", lambda e, c: set_field(e, "student_id", c, ""), "TL-5"),
+    ("transcript_letter", lambda e, c: set_field(e, "addressee", c, "পরীক্ষা নিয়ন্ত্রক বরাবর"), None),
+    ("leave_letter", lambda e, c: set_field(e, "addressee", c, "The Proctor, IIUC"), "LV-1"),
+    ("leave_letter", lambda e, c: set_field(e, "leave_dates", c, ""), "LV-3"),
     ("duplicate_id_card", lambda e, c: set_field(e, "gd_number", c, ""), "ID-4"),
     ("duplicate_id_card", lambda e, c: set_field(e, "session", c, "2020"), "ID-3"),
 ]
@@ -54,38 +60,58 @@ MUTATIONS = [
 def test_each_mistake_raises_exactly_one_rule(card_id, mutate, rule_id):
     card = CARDS[card_id]
     flags, _ = audit(card, mutate(copy.deepcopy(clean_extraction(card)), card))
-    assert [f["rule_id"] for f in flags] == [rule_id]
+    assert [f["rule_id"] for f in flags] == ([rule_id] if rule_id else [])
+
+
+@pytest.mark.parametrize("card_id", sorted(CARDS))
+def test_demo_mistakes_button_plants_exactly_three_problems(card_id):
+    """The UI's "Add 3 mistakes" button applies demo_mistakes; each must trip a different rule."""
+    card = CARDS[card_id]
+    e = copy.deepcopy(clean_extraction(card))
+    demo = card["demo_mistakes"]
+    for key, value in demo.get("set", {}).items():
+        set_field(e, key, card, value)
+    if demo.get("clear_signature"):
+        label = next(s["label_en"] for s in card["signatures"] if s["key"] == demo["clear_signature"])
+        next(b for b in e["signature_boxes"] if b["label"] == label)["has_ink"] = False
+    if demo.get("photo_off"):
+        e["photo_box"]["filled"] = False
+    flags, _ = audit(card, e)
+    assert len({f["rule_id"] for f in flags}) == 3
 
 
 def test_photo_not_required_is_never_flagged():
-    card = CARDS["makeup_exam_application"]
+    card = CARDS["bus_requisition"]
     e = clean_extraction(card)
     e["photo_box"] = {"present": False, "filled": False}
     assert audit(card, e)[0] == []
 
 
 def test_missing_signature_box_is_a_flag_not_a_pass():
-    card = CARDS["makeup_exam_application"]
+    card = CARDS["transcript_letter"]
     e = clean_extraction(card)
-    e["signature_boxes"] = [e["signature_boxes"][0]]
+    e["signature_boxes"] = []
     flags, _ = audit(card, e)
-    assert [(f["rule_id"], f["read"]) for f in flags] == [("MU-8", "box not found")]
+    assert [(f["rule_id"], f["read"]) for f in flags] == [("TL-7", "box not found")]
 
 
-@pytest.mark.parametrize("title,expected", [
-    ("APPLICATION FOR ACADEMIC TRANSCRIPT", "transcript_application"),
-    ("SAMPLE UNIVERSITY (IIUC-style sample form) APPLICATION FOR ACADEMIC TRANSCRIPT", "transcript_application"),
-    ("একাডেমিক ট্রান্সক্রিপ্টের জন্য আবেদন ফরম", "transcript_application"),
-    ("Application for Make-up Examination", "makeup_exam_application"),
-    ("APPLICATION FOR DUPLICATE ID CARD", "duplicate_id_card"),
+@pytest.mark.parametrize("title,kind,expected", [
+    ("APPLICATION FOR ACADEMIC TRANSCRIPT", "form", "transcript_application"),
+    ("SAMPLE UNIVERSITY (IIUC-style sample form) APPLICATION FOR ACADEMIC TRANSCRIPT", "form", "transcript_application"),
+    ("একাডেমিক ট্রান্সক্রিপ্টের জন্য আবেদন ফরম", "form", "transcript_application"),
+    ("Bus Requisition", "form", "bus_requisition"),
+    ("APPLICATION FOR DUPLICATE ID CARD", "form", "duplicate_id_card"),
+    ("Application for transcript", "letter", "transcript_letter"),
+    ("ছুটির জন্য আবেদন", "letter", "leave_letter"),
+    ("Prayer for leave of absence", "letter", "leave_letter"),
 ])
-def test_match_card(title, expected):
-    card, _ = match_card(title, CARDS)
+def test_match_card(title, kind, expected):
+    card, _ = match_card(title, CARDS, kind)
     assert card["id"] == expected
 
 
 def test_unknown_form_is_refused():
-    card, _ = match_card("Library Membership Form", CARDS)
+    card, _ = match_card("Library Membership Form", CARDS, "form")
     assert card is None
 
 

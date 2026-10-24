@@ -2,13 +2,14 @@
 
 const $ = (sel) => document.querySelector(sel);
 const STORE_KEY = "formbondhu.engine";
-const STEP_ORDER = ["read", "match", "audit", "verify", "explain"];
+const STEP_ORDER = ["read", "match", "audit", "verify", "explain", "draft"];
 const STEP_TEXT = {
   read: ["ফর্ম পড়া", "Read the form"],
   match: ["নিয়মের কার্ড মেলানো", "Match the rule card"],
   audit: ["প্রতিটি নিয়ম যাচাই", "Check every rule"],
   verify: ["প্রতিটি সমস্যা আবার দেখা", "Double-check each problem"],
   explain: ["বাংলায় সমাধান লেখা", "Write fixes in Bangla"],
+  draft: ["সংশোধিত দরখাস্ত লেখা", "Draft the corrected letter"],
 };
 const ENGINE_TEXT = {
   aistudio: "Gemma 4 চলছে Google AI Studio-তে (open-weights model, hosted free API)",
@@ -21,7 +22,7 @@ const VERDICT = {
   unknown_form: { cls: "unknown", bn: "অচেনা ফর্ম", en: () => "Unknown form" },
 };
 
-const state = { cards: [], engines: null, blob: null, pads: {}, previewUrl: null };
+const state = { cards: [], engines: null, engineValue: "", engineNotes: [], cardId: null, blob: null, pads: {}, previewUrl: null };
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const bnDigits = (n) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
@@ -52,39 +53,46 @@ async function init() {
 /* ---------- engine choice ---------- */
 
 function renderEngines() {
-  const select = $("#engine-select");
+  const box = $("#engine-chips");
   const saved = store();
-  const notes = [];
-  select.innerHTML = "";
+  const choices = [];
+  box.innerHTML = "";
+  state.engineNotes = [];
   for (const engine of state.engines.engines) {
-    if (engine.available) {
-      for (const model of engine.models) {
-        const opt = new Option(`${engine.label}: ${model}`, `${engine.id}|${model}`);
-        select.add(opt);
-      }
-    } else {
-      const opt = new Option(`${engine.label}: not available here`, "", false, false);
-      opt.disabled = true;
-      select.add(opt);
-      notes.push(`${engine.label}: ${engine.reason}`);
+    for (const model of engine.available ? engine.models : [null]) {
+      const value = model ? `${engine.id}|${model}` : "";
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip engine-chip";
+      chip.setAttribute("role", "radio");
+      chip.disabled = !engine.available;
+      chip.dataset.value = value;
+      chip.innerHTML = `<span class="dot ${engine.available ? "on" : "off"}" aria-hidden="true"></span><span>${esc(engine.label)}<span class="en">${esc(model || "not available here")}</span></span>`;
+      chip.addEventListener("click", () => selectEngine(value));
+      box.append(chip);
+      if (model) choices.push(value);
     }
+    if (!engine.available) state.engineNotes.push(`${engine.label}: ${engine.reason}`);
   }
-  const values = [...select.options].filter((o) => !o.disabled).map((o) => o.value);
   const def = state.engines.engines.find((e) => e.id === state.engines.default && e.available);
-  select.value = values.includes(saved) ? saved : def ? `${def.id}|${def.default_model}` : values[0] || "";
-  const update = () => {
-    const engine = selectedEngine();
-    const lines = [engine ? ENGINE_TEXT[engine.backend] : "কোনো মডেল চালু নেই। No engine is available.", ...notes];
-    $("#engine-note").innerHTML = lines.map((l, i) => (i ? `<span class="en">${esc(l)}</span>` : esc(l))).join("");
-  };
-  select.addEventListener("change", () => { store(select.value); update(); });
-  update();
+  selectEngine(choices.includes(saved) ? saved : def ? `${def.id}|${def.default_model}` : choices[0] || "", false);
+}
+
+function selectEngine(value, remember = true) {
+  state.engineValue = value;
+  if (remember && value) store(value);
+  for (const chip of document.querySelectorAll(".engine-chip")) {
+    chip.setAttribute("aria-checked", String(Boolean(value) && chip.dataset.value === value));
+  }
+  const engine = selectedEngine();
+  const lines = [engine ? ENGINE_TEXT[engine.backend] : "কোনো মডেল চালু নেই। No engine is available.", ...state.engineNotes];
+  $("#engine-note").innerHTML = lines.map((l, i) => (i ? `<span class="en">${esc(l)}</span>` : esc(l))).join("");
+  $("#check-btn").disabled = !state.blob || !engine;
 }
 
 function selectedEngine() {
-  const value = $("#engine-select").value;
-  if (!value) return null;
-  const [backend, ...rest] = value.split("|");
+  if (!state.engineValue) return null;
+  const [backend, ...rest] = state.engineValue.split("|");
   return { backend, model: rest.join("|") };
 }
 
@@ -147,19 +155,42 @@ function setBlob(blob) {
 /* ---------- form maker ---------- */
 
 function bindMaker() {
-  const select = $("#card-select");
-  for (const card of state.cards) select.add(new Option(card.title_bn, card.id));
-  if (state.cards.some((c) => c.id === "transcript_application")) select.value = "transcript_application";
-  const showTitle = () => { $("#card-title-en").textContent = currentCard().title_en; };
-  select.addEventListener("change", () => { showTitle(); buildMaker(currentCard()); refreshMakerPreview(); });
-  showTitle();
+  const box = $("#card-chips");
+  const groups = [["form", "ছাপা ফর্ম", "Printed forms"], ["letter", "দরখাস্ত", "Application letters"]];
+  for (const [kind, bn, en] of groups) {
+    const cards = state.cards.filter((c) => (c.kind || "form") === kind);
+    if (!cards.length) continue;
+    const group = document.createElement("div");
+    group.className = "chip-group";
+    group.innerHTML = `<p class="chip-group-title">${bn} <span class="en">${en}</span></p>`;
+    for (const card of cards) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip card-chip";
+      chip.setAttribute("role", "radio");
+      chip.dataset.id = card.id;
+      chip.innerHTML = `<span>${esc(card.title_bn)}<span class="en">${esc(card.title_en)}</span></span><span class="aud">${esc(card.audience_bn || "")}</span>`;
+      chip.addEventListener("click", () => selectCard(card.id));
+      group.append(chip);
+    }
+    box.append(group);
+  }
   $("#photo-toggle").addEventListener("change", refreshMakerPreview);
   $("#plant-mistakes").addEventListener("click", () => { plantMistakes(currentCard()); refreshMakerPreview(); });
   $("#fill-correct").addEventListener("click", () => { buildMaker(currentCard()); refreshMakerPreview(); });
-  buildMaker(currentCard());
+  selectCard(state.cards.some((c) => c.id === "transcript_application") ? "transcript_application" : state.cards[0].id, false);
 }
 
-const currentCard = () => state.cards.find((c) => c.id === $("#card-select").value) || state.cards[0];
+function selectCard(id, refresh = true) {
+  state.cardId = id;
+  for (const chip of document.querySelectorAll(".card-chip")) chip.setAttribute("aria-checked", String(chip.dataset.id === id));
+  const card = currentCard();
+  $("#card-source").textContent = card.source || "";
+  buildMaker(card);
+  if (refresh) refreshMakerPreview();
+}
+
+const currentCard = () => state.cards.find((c) => c.id === state.cardId) || state.cards[0];
 
 function buildMaker(card) {
   const fields = $("#maker-fields");
@@ -200,16 +231,14 @@ function buildMaker(card) {
 }
 
 function plantMistakes(card) {
-  const date = $("#maker-fields input[data-key='date']");
-  if (date) date.value = "12/3/26";
-  const lastSig = card.signatures[card.signatures.length - 1];
-  state.pads[lastSig.key].clear();
-  if (card.photo_required) {
-    $("#photo-toggle").checked = false;
-  } else {
-    const code = $("#maker-fields input[data-key='course_code']");
-    if (code) code.value = "Data Structures";
+  // Each rule card lists its own three demo mistakes, so the button always plants exactly three problems.
+  const demo = card.demo_mistakes || {};
+  for (const [key, value] of Object.entries(demo.set || {})) {
+    const input = $(`#maker-fields input[data-key='${key}']`);
+    if (input) input.value = value;
   }
+  if (demo.clear_signature && state.pads[demo.clear_signature]) state.pads[demo.clear_signature].clear();
+  if (demo.photo_off) $("#photo-toggle").checked = false;
 }
 
 function makePad(canvas, clearBtn) {
@@ -295,6 +324,8 @@ async function renderFormCanvas(card) {
   const UI = '"Anek Bangla", "Noto Sans Bengali", "Bangla Sangam MN", sans-serif';
   const HAND = '"Caveat", "Bradley Hand", cursive';
   await Promise.all([document.fonts.load(`30px ${HAND}`), document.fonts.load(`20px ${UI}`)]).catch(() => {});
+  const values = Object.fromEntries([...document.querySelectorAll("#maker-fields input")].map((i) => [i.dataset.key, i.value]));
+  if (card.kind === "letter") return renderLetterCanvas(card, values, HAND);
   const W = 1000, rowH = 60, top = 230, labelW = 400;
   const H = top + card.fields.length * rowH + 300;
   const canvas = document.createElement("canvas");
@@ -344,7 +375,6 @@ async function renderFormCanvas(card) {
     }
   }
 
-  const values = Object.fromEntries([...document.querySelectorAll("#maker-fields input")].map((i) => [i.dataset.key, i.value]));
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 1.2;
   card.fields.forEach((f, i) => {
@@ -365,9 +395,11 @@ async function renderFormCanvas(card) {
 
   let y = top + card.fields.length * rowH + 36;
   ctx.fillStyle = "#222";
-  const attach = "Attach: " + card.attachments.map((a, i) => `(${i + 1}) ${a.en}`).join(", ");
-  fitFont(ctx, attach, W - 80, 17, "Arial, sans-serif");
-  ctx.fillText(attach, 40, y);
+  if (card.attachments.length) {
+    const attach = "Attach: " + card.attachments.map((a, i) => `(${i + 1}) ${a.en}`).join(", ");
+    fitFont(ctx, attach, W - 80, 17, "Arial, sans-serif");
+    ctx.fillText(attach, 40, y);
+  }
 
   y += 150;
   const n = card.signatures.length;
@@ -385,6 +417,52 @@ async function renderFormCanvas(card) {
     const caption = `${s.label_bn} / ${s.label_en}`;
     fitFont(ctx, caption, boxW, 18, UI);
     ctx.fillText(caption, x, y + 28);
+  });
+  return canvas;
+}
+
+/* A handwritten application letter on ruled paper, in the usual Bangladeshi university format. */
+function renderLetterCanvas(card, values, HAND) {
+  const W = 1000, left = 90, lineH = 46, width = W - left - 60;
+  const measure = document.createElement("canvas").getContext("2d");
+  measure.font = `500 30px ${HAND}`;
+  const wrap = (text) => {
+    const out = [];
+    let line = "";
+    for (const word of text.split(/\s+/).filter(Boolean)) {
+      const next = line ? `${line} ${word}` : word;
+      if (measure.measureText(next).width > width && line) { out.push(line); line = word; } else line = next;
+    }
+    if (line) out.push(line);
+    return out;
+  };
+  const body = (card.body_template_en || "").replace(/\{(\w+)\}/g, (_, k) => values[k] || "");
+  const lines = [`Date: ${values.date || ""}`, "", "To", ...(values.addressee || "").split(/,\s*/).filter(Boolean),
+    "", `Subject: ${values.subject || ""}`, "", "Sir,", ...wrap(body), "", "Yours obediently,", "@sig",
+    `Name: ${values.student_name || ""}`, `ID: ${values.student_id || ""}`,
+    `Department: ${values.department || ""}, Semester: ${values.semester || ""}`];
+  const H = 70 + lines.length * lineH + 70;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fffdf6";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#cfdcef";
+  ctx.lineWidth = 1;
+  for (let y = 70 + lineH; y < H; y += lineH) { ctx.beginPath(); ctx.moveTo(0, y + 8); ctx.lineTo(W, y + 8); ctx.stroke(); }
+  ctx.strokeStyle = "#e7a5a5";
+  ctx.beginPath(); ctx.moveTo(left - 22, 0); ctx.lineTo(left - 22, H); ctx.stroke();
+  ctx.fillStyle = "#1f3a93";
+  ctx.font = `500 30px ${HAND}`;
+  lines.forEach((text, i) => {
+    const y = 70 + (i + 1) * lineH;
+    if (text === "@sig") {
+      const pad = state.pads.student;
+      if (pad && pad.inked) ctx.drawImage(pad.canvas, left, y - 40, 230, 52);
+      return;
+    }
+    ctx.fillText(text, left, y);
   });
   return canvas;
 }
@@ -501,7 +579,7 @@ function renderResult(r) {
     const li = $(`#step-${id}`);
     if (li && li.className === "waiting") {
       li.className = "skipped";
-      li.querySelector(".t-state").textContent = "দরকার হয়নি";
+      li.querySelector(".t-state").textContent = id === "draft" && r.card?.kind !== "letter" ? "শুধু দরখাস্তে" : "দরকার হয়নি";
     }
   }
   const count = (r.problems || []).length;
@@ -518,18 +596,33 @@ function renderResult(r) {
     if (count) {
       parts.push(`<h3>যা ঠিক করতে হবে<span class="en">Fix before you go</span></h3><ul class="problems">${r.problems.map(problemItem).join("")}</ul>`);
     }
+    if (r.draft) {
+      const holes = (r.draft.placeholders || []).length
+        ? `<p class="fix-en">বন্ধনীর [ ] জায়গাগুলো নিজে পূরণ করুন। Fill in the parts in square brackets yourself.</p>` : "";
+      parts.push(`<h3>সংশোধিত দরখাস্ত<span class="en">Corrected letter, written only from your own details</span></h3>
+        <div class="letter-box"><button type="button" class="ghost copy-btn" id="copy-letter">কপি করুন<span class="en">Copy letter</span></button>
+        <pre class="letter">${esc(r.draft.letter)}</pre>${holes}</div>`);
+    }
     if ((r.manual || []).length) {
       parts.push(`<h3>নিজে একবার দেখুন<span class="en">The second look could not confirm these</span></h3><ul class="problems manual">${r.manual.map(problemItem).join("")}</ul>`);
     }
-    parts.push(`<h3>সাথে যা নিতে হবে<span class="en">Bring with the form</span></h3><ul class="docs">${r.attachments.map((a) => `<li>${esc(a.bn)} <span class="en">${esc(a.en)}</span></li>`).join("")}</ul>`);
+    if (r.attachments.length) {
+      parts.push(`<h3>সাথে যা নিতে হবে<span class="en">Bring with it</span></h3><ul class="docs">${r.attachments.map((a) => `<li>${esc(a.bn)} <span class="en">${esc(a.en)}</span></li>`).join("")}</ul>`);
+    }
     parts.push(`<h3>কোন অফিসে, কোন ক্রমে<span class="en">Where to go, in order</span></h3><ol class="route">${r.route.map((s) => `<li><span class="office">${esc(s.office_bn)} <span class="en">${esc(s.office_en)}</span></span><span>${esc(s.task_bn)} <span class="en">${esc(s.task_en)}</span></span></li>`).join("")}</ol>`);
     if ((r.passed || []).length) {
       parts.push(`<details class="passed"><summary>${bnDigits(r.passed.length)}টি নিয়ম ঠিক আছে (${r.passed.length} rules passed)</summary><ul>${r.passed.map((p) => `<li>${esc(p.rule_id)}: ${esc(p.label_bn)} / ${esc(p.label_en)}</li>`).join("")}</ul></details>`);
     }
   }
   const where = r.engine.backend === "ollama" ? "local Ollama" : "Google AI Studio";
-  parts.push(`<p class="run-meta">মডেল: Gemma 4 (${esc(r.engine.model)}) on ${where}. মোট সময় ${(r.ms / 1000).toFixed(1)} সেকেন্ড.</p>`);
+  parts.push(`<p class="run-meta">মডেল: Gemma 4 (${esc(r.engine.model)}) on ${where}. মোট সময় ${(r.ms / 1000).toFixed(1)} সেকেন্ড.${r.card?.source ? `<br>${esc(r.card.source)}` : ""}</p>`);
   $("#result").innerHTML = parts.join("");
+  const copy = $("#copy-letter");
+  if (copy) {
+    copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(r.draft.letter); copy.firstChild.textContent = "কপি হয়েছে"; } catch (_) { copy.firstChild.textContent = "কপি করা যায়নি"; }
+    });
+  }
 }
 
 function problemItem(p) {

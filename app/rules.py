@@ -42,10 +42,15 @@ def _signature_owner(label):
     return re.sub(r"\b(signature|sign|s)\b|স্বাক্ষর", " ", _norm(label)).strip()
 
 
-def match_card(title, cards):
-    """Return (card, score) for the rule card whose title or alias best matches, or (None, score)."""
+def match_card(title, cards, kind=None):
+    """Return (card, score) for the rule card whose title or alias best matches, or (None, score).
+
+    kind ("form" or "letter") narrows the search when given, so a transcript *letter* never
+    matches the transcript *form* card just because both mention transcripts.
+    """
+    pool = [c for c in cards.values() if kind is None or c.get("kind", "form") == kind] or list(cards.values())
     best, best_score = None, 0.0
-    for card in cards.values():
+    for card in pool:
         for name in [card["title_en"], card["title_bn"], *card.get("aliases", [])]:
             score = _similarity(title, name)
             if score > best_score:
@@ -122,7 +127,7 @@ def audit(card, extraction):
     flags, passed = [], []
     for rule in card["rules"]:
         kind, read, problem = rule["type"], None, False
-        if kind in ("required", "pattern", "date"):
+        if kind in ("required", "pattern", "date", "contains_any"):
             read = values.get(rule["field"])
             if read is None or read == "":
                 problem = True
@@ -130,6 +135,8 @@ def audit(card, extraction):
                 problem = not re.fullmatch(rule["pattern"], read)
             elif kind == "date":
                 problem = not _valid_date(read)
+            elif kind == "contains_any":
+                problem = not any(word.lower() in read.lower() for word in rule["any"])
         elif kind == "signature":
             inked = _signature_inked(card, rule["signature"], boxes)
             read = {True: "ink seen", False: "empty", None: "box not found"}[inked]
