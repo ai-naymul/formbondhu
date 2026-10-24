@@ -4,16 +4,16 @@
 "At IIUC a missing signature doesn't cost you five minutes. It costs you another 90-minute bus ride to Kumira and another queue. FormBondhu checks your form before you leave home."
 
 **Problem (0:15–0:35)**
-"Rafiya is a first-year EEE student. She needs her transcript. She copies a senior's photo of the form, writes the date as 12/3/26, forgets the photo, and gets handed the form back at the third office. The problem statement for this event says it directly: simple paperwork means visiting three offices."
+"Rafiya needs her transcript. She copies a senior's application from Messenger, addresses it to the Principal, forgets her ID, and gets it handed back at the Controller's office. The problem statement for this event says it directly: simple paperwork means visiting three offices. FormBondhu checks printed forms and handwritten applications, the two kinds of paper students actually carry."
 
 **Live demo (0:35–1:30)**
-1. Open the Form maker and press **Add 3 mistakes**, then **Check this form**. Talk the judges through the steps panel as it fills in:
-   - "Gemma 4 reads the form."
-   - "Code matches it to the transcript rule card and checks every rule."
-   - "Gemma looks again to confirm each problem, and writes the fix in Bangla."
-2. The red stamp lands. Read one fix aloud.
-3. Hand the laptop or phone to a judge: "Sign it, fix the date." Re-run, and the stamp turns green. That's proof nothing is cached.
-4. Open one "raw output" panel: "This is the model's actual JSON."
+1. Choose **ট্রান্সক্রিপ্টের জন্য দরখাস্ত** (the letter), press **Add 3 mistakes**, then **Check**. Talk the judges through the six steps as they fill in:
+   - "Gemma 4 reads the handwriting and works out it's a letter."
+   - "Code checks the rules."
+   - "Gemma double-checks, explains the fixes in Bangla, and drafts the corrected letter."
+2. The red stamp lands. Point at **wrong office**, **missing ID** and **date**. Then show the corrected letter: it's addressed to the Controller of Examinations and says `[your student ID]` instead of making one up.
+3. Hand the laptop or phone to a judge: "Fix the ID and sign it." Re-run, and the stamp turns green. That's proof nothing is cached.
+4. Open the draft step's **raw output**: "grounding check passed. Code verified that the model didn't invent an ID."
 
 **Why open AI matters (1:30–1:50)**
 "It runs only on open-weights Gemma 4: hosted through Google AI Studio for this demo, or fully on your own machine through Ollama, chosen right here in the engine bar. Gemma sees, code decides: every problem maps to a human-written rule, and the model can't invent a fee or an office."

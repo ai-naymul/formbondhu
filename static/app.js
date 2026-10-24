@@ -198,7 +198,10 @@ function buildMaker(card) {
   for (const f of card.fields) {
     const label = document.createElement("label");
     label.innerHTML = `${esc(f.label_bn)}<span class="en">${esc(f.label_en)}</span>`;
-    const input = document.createElement("input");
+    // Long values get a wrapping box across the full width, so nothing is cut off inside the field.
+    const wide = f.sample.length > 22;
+    const input = document.createElement(wide ? "textarea" : "input");
+    if (wide) { input.rows = 2; label.classList.add("wide"); }
     input.value = f.sample;
     input.dataset.key = f.key;
     input.autocomplete = "off";
@@ -234,7 +237,7 @@ function plantMistakes(card) {
   // Each rule card lists its own three demo mistakes, so the button always plants exactly three problems.
   const demo = card.demo_mistakes || {};
   for (const [key, value] of Object.entries(demo.set || {})) {
-    const input = $(`#maker-fields input[data-key='${key}']`);
+    const input = $(`#maker-fields [data-key='${key}']`);
     if (input) input.value = value;
   }
   if (demo.clear_signature && state.pads[demo.clear_signature]) state.pads[demo.clear_signature].clear();
@@ -324,7 +327,7 @@ async function renderFormCanvas(card) {
   const UI = '"Anek Bangla", "Noto Sans Bengali", "Bangla Sangam MN", sans-serif';
   const HAND = '"Caveat", "Bradley Hand", cursive';
   await Promise.all([document.fonts.load(`30px ${HAND}`), document.fonts.load(`20px ${UI}`)]).catch(() => {});
-  const values = Object.fromEntries([...document.querySelectorAll("#maker-fields input")].map((i) => [i.dataset.key, i.value]));
+  const values = Object.fromEntries([...document.querySelectorAll("#maker-fields [data-key]")].map((i) => [i.dataset.key, i.value]));
   if (card.kind === "letter") return renderLetterCanvas(card, values, HAND);
   const W = 1000, rowH = 60, top = 230, labelW = 400;
   const H = top + card.fields.length * rowH + 300;

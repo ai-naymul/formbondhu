@@ -74,10 +74,12 @@ select {
 .maker-fields { display: grid; grid-template-columns: 1fr; gap: 8px; }
 @media (min-width: 560px) { .maker-fields { grid-template-columns: 1fr 1fr; } }
 .maker-fields label { display: grid; gap: 2px; font-size: 15px; font-weight: 600; min-width: 0; }
-.maker-fields input {
+.maker-fields input, .maker-fields textarea {
   font: 500 22px/1.2 "Caveat", cursive; color: var(--pen); padding: 6px 10px; width: 100%;
   border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--sheet);
 }
+.maker-fields textarea { resize: vertical; min-height: 64px; }
+.maker-fields label.wide { grid-column: 1 / -1; }
 .maker-signatures { display: grid; gap: 10px; margin-top: 12px; }
 .sig { display: grid; gap: 4px; font-size: 15px; font-weight: 600; }
 .sig-pad-wrap { position: relative; }
