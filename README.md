@@ -106,7 +106,19 @@ When deployed, use webhook mode instead: set `TELEGRAM_WEBHOOK_SECRET`, then poi
 | Corrected letters passing the ID grounding check | 4 / 4 |
 | Time per check | median 23 s, max 30 s |
 
-Limits: these images come from the app's own Form maker, written in a handwriting-style font, so the results prove the pipeline end to end but not accuracy on real handwriting. Photos of real handwritten paper are the next test set.
+**Handwritten letters** (`python eval/run_eval.py --set handwriting`, full table in [eval/RESULTS_HANDWRITING.md](eval/RESULTS_HANDWRITING.md)):
+- The English application letters were converted to handwriting on lined paper with an online text-to-handwriting tool ([codeshack.io](https://codeshack.io/text-to-handwriting/)), in three styles from neat print to cursive.
+- The Bangla leave letter uses the Galada handwriting-style font.
+
+| Measure | Result |
+|---|---|
+| Exact result | 8 / 8 |
+| Planted problems caught | 15 / 15 |
+| False alarms | 0 |
+
+On the first run, the two Bangla letters were flagged "not signed", because their "signature" was just the name written in the same lettering as the rest of the letter. That run is kept in [eval/RESULTS_HANDWRITING_run1_name_as_signature.md](eval/RESULTS_HANDWRITING_run1_name_as_signature.md). With an actual pen-stroke signature, both pass.
+
+Limits: all of these are generated images, not photos of real paper written by a person. Real handwriting photographed on a phone is the next test set.
 
 ## Screenshots / demo
 

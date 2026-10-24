@@ -1,6 +1,6 @@
 # Handwritten test sheets
 
-Write these by hand on paper. Each letter has its expected result decided in advance, so you can tell whether the app got it right. All names and IDs are made up.
+Ready-made handwritten versions of these letters are in `eval/handwriting/`. You can upload them in the Photo tab, or print one and photograph it. For the real test, also write them by hand on paper. Each letter has its expected result decided in advance, so you can tell whether the app got it right. All names and IDs are made up.
 
 **How to photograph:**
 - Use dark blue or black pen on white paper, and write a little larger than usual.
