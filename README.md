@@ -4,6 +4,8 @@ Photograph a filled university form or a handwritten application letter (দর�
 
 **Live app: https://formbondhu.vercel.app** · Repo: https://github.com/ai-naymul/formbondhu · Demo video: _added after recording_
 
+For judges: the full end-to-end technical walkthrough is in [docs/JUDGE_PACK.md](docs/JUDGE_PACK.md).
+
 ![FormBondhu home: the six-step harness storyboard paused on "Re-check", with the magnifier over a flagged line](docs/hero.png)
 
 ## The problem
