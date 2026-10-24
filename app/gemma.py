@@ -12,7 +12,7 @@ import httpx
 
 AISTUDIO_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 BACKENDS = ("aistudio", "ollama")
-OLLAMA_PULL_HINT = "ollama pull gemma4   (tags: https://ollama.com/library/gemma4)"
+OLLAMA_PULL_HINT = "ollama pull gemma4:e4b   (8 GB RAM: gemma4:e2b; all tags: https://ollama.com/library/gemma4)"
 _transport = None  # tests replace this with an httpx.MockTransport
 
 

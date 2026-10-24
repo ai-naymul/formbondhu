@@ -5,3 +5,4 @@ samples/
 demo/
 .pytest_cache/
 __pycache__/
+docs/
