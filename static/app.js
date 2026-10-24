@@ -29,7 +29,17 @@ const STAMP_TEXT = {
   unknown_form: ["অচেনা ফর্ম", "Unknown document"],
 };
 
-const state = { cards: [], engines: null, engineValue: "", engineNotes: [], cardId: null, blob: null, pads: {}, previewUrl: null };
+/* The harness rail: one node per step; blue nodes are Gemma 4, green nodes are plain code. */
+const RAIL = [
+  { id: "read", ai: true, bn: "পড়া", en: "Read", icon: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' },
+  { id: "match", ai: false, bn: "মেলানো", en: "Match", icon: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>' },
+  { id: "audit", ai: false, bn: "নিয়ম", en: "Rules", icon: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>' },
+  { id: "verify", ai: true, bn: "পুনর্দেখা", en: "Re-check", icon: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>' },
+  { id: "explain", ai: true, bn: "সমাধান", en: "Fix", icon: '<path d="M4 5h16v11H9l-5 4z"/>' },
+  { id: "draft", ai: true, bn: "দরখাস্ত", en: "Draft", icon: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>' },
+];
+
+const state = { cards: [], engines: null, engineValue: "", engineNotes: [], cardId: null, blob: null, pads: {}, previewUrl: null, running: false };
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const bnDigits = (n) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
@@ -38,6 +48,41 @@ const bnDigits = (n) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬�
 const bi = (bn, en) => `<span class="bn">${bn}</span><span class="en">${en}</span>`;
 const one = (bn, en) => `<span class="bn-only">${bn}</span><span class="en-only">${en}</span>`;
 const lang = () => document.documentElement.dataset.lang || "bn";
+
+function buildRail(el) {
+  el.innerHTML = `<div class="rail-track"><span class="rail-line"></span><span class="rail-dot"></span></div>
+    <ol class="rail-nodes">${RAIL.map((n, i) => `<li class="node ${n.ai ? "ai" : "code"}" data-step="${n.id}" style="--i:${i}">
+      <span class="node-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${n.icon}</svg></span>
+      <span class="node-label">${one(n.bn, n.en)}</span></li>`).join("")}</ol>
+    <p class="rail-legend"><span class="lg ai">Gemma 4 (AI)</span><span class="lg code">${one("কোড (নিয়ম)", "Code (rules)")}</span></p>`;
+}
+
+/* Demo mode loops the dot along the rail; live mode mirrors the real run step by step. */
+function railDemo() {
+  const el = $("#live-rail");
+  el.className = "rail demo";
+  for (const node of el.querySelectorAll(".node")) node.classList.remove("running", "done", "skipped", "failed");
+  el.style.removeProperty("--pos");
+}
+
+function railLive() {
+  const el = $("#live-rail");
+  el.className = "rail live";
+  for (const node of el.querySelectorAll(".node")) node.classList.remove("running", "done", "skipped", "failed");
+  el.style.setProperty("--pos", "0%");
+}
+
+function railStep(id, status) {
+  const el = $("#live-rail");
+  const node = el.querySelector(`.node[data-step="${id}"]`);
+  if (!node) return;
+  node.classList.remove("running", "done", "skipped", "failed");
+  node.classList.add(status);
+  if (status === "running" || status === "done") {
+    const index = RAIL.findIndex((n) => n.id === id);
+    el.style.setProperty("--pos", `${(index / (RAIL.length - 1)) * 100}%`);
+  }
+}
 
 function store(key, value) {
   try {
@@ -49,6 +94,8 @@ function store(key, value) {
 
 async function init() {
   setLang(store(LANG_KEY) || "bn", false);
+  buildRail($("#hero-rail"));
+  buildRail($("#live-rail"));
   for (const btn of document.querySelectorAll(".lang-switch button")) btn.addEventListener("click", () => setLang(btn.dataset.lang));
   const [cards, engines] = await Promise.all([
     fetch("/api/cards").then((r) => r.json()),
@@ -64,6 +111,10 @@ async function init() {
   $("#check-btn").addEventListener("click", runCheck);
   $("#cta-snap").addEventListener("click", () => { showTab("snap"); $("#photo-input").click(); });
   $("#cta-sample").addEventListener("click", trySample);
+  $("#edit-btn").addEventListener("click", () => {
+    reviewing(false);
+    $(".input-pane").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function setLang(value, remember = true) {
@@ -120,6 +171,13 @@ function selectedEngine() {
   return { backend, model: rest.join("|") };
 }
 
+/* After Check the editor folds away so the document and the analysis sit side by side;
+   "Edit again" brings it back. */
+function reviewing(on) {
+  $(".input-pane").classList.toggle("reviewing", on);
+  $("#edit-btn").hidden = !on;
+}
+
 /* ---------- tabs ---------- */
 
 function bindTabs() {
@@ -128,6 +186,7 @@ function bindTabs() {
 }
 
 async function showTab(name) {
+  reviewing(false);
   for (const t of ["snap", "maker"]) {
     $(`#tab-${t}`).setAttribute("aria-selected", String(t === name));
     $(`#pane-${t}`).hidden = t !== name;
@@ -182,6 +241,7 @@ function setBlob(blob) {
   state.previewUrl = blob ? URL.createObjectURL(blob) : null;
   $("#sheet").hidden = !blob;
   if (blob) $("#preview").src = state.previewUrl;
+  if (!state.running) railDemo();
 }
 
 /* ---------- form maker ---------- */
@@ -323,7 +383,7 @@ function makePad(canvas, clearBtn) {
     size();
     ctx.save();
     ctx.fillStyle = "#1f3a93";
-    ctx.font = `${30 * ratio}px "Homemade Apple", "Caveat", cursive`;
+    ctx.font = `${40 * ratio}px "Homemade Apple", "Caveat", cursive`;
     ctx.translate(canvas.width * 0.08, canvas.height * 0.68);
     ctx.rotate(-0.06);
     ctx.fillText(name, 0, 0);
@@ -530,6 +590,7 @@ const STATE_TEXT = {
 };
 
 function resetTrace() {
+  railLive();
   const trace = $("#trace");
   trace.innerHTML = "";
   for (const id of STEP_ORDER) {
@@ -552,6 +613,7 @@ function onStep(event) {
   const li = $(`#step-${event.id}`);
   if (!li) return;
   const meta = li.querySelector(".t-meta");
+  railStep(event.id, event.status === "start" ? "running" : "done");
   if (event.status === "start") {
     li.className = "running";
     li.querySelector(".t-state").innerHTML = STATE_TEXT.running;
@@ -576,8 +638,10 @@ async function runCheck() {
   $("#result").innerHTML = "";
   $("#stamp").hidden = true;
   resetTrace();
-  // On a phone the steps panel sits below the button; bring it into view so the run is visible.
-  if (window.matchMedia("(max-width: 919px)").matches) $(".slip").scrollIntoView({ behavior: "smooth", block: "start" });
+  state.running = true;
+  reviewing(true);
+  // Take the student to where the analysis is happening, on phones and desktops alike.
+  $(".slip").scrollIntoView({ behavior: "smooth", block: "start" });
   const body = new FormData();
   body.append("image", state.blob, state.blob.type === "image/png" ? "form.png" : "form.jpg");
   body.append("backend", engine.backend);
@@ -608,6 +672,7 @@ async function runCheck() {
   } catch (err) {
     showError(`Network problem: ${err.message}`);
   } finally {
+    state.running = false;
     btn.disabled = !state.blob;
   }
 }
@@ -622,6 +687,7 @@ function showError(message) {
   for (const li of document.querySelectorAll("#trace li.running")) {
     li.className = "done";
     li.querySelector(".t-state").innerHTML = STATE_TEXT.failed;
+    railStep(li.id.replace("step-", ""), "failed");
   }
   $("#result").innerHTML = `<div class="error"><strong>${one("যাচাই শেষ করা যায়নি।", "The check could not finish.")}</strong><br>${esc(message)}</div>`;
 }
@@ -640,6 +706,7 @@ function renderResult(r) {
     if (li && li.className === "waiting") {
       li.className = "skipped";
       li.querySelector(".t-state").innerHTML = id === "draft" && r.card?.kind !== "letter" ? STATE_TEXT.lettersOnly : STATE_TEXT.skipped;
+      railStep(id, "skipped");
     }
   }
   const count = (r.problems || []).length;
@@ -679,6 +746,12 @@ function renderResult(r) {
   const secs = (r.ms / 1000).toFixed(1);
   parts.push(`<p class="run-meta">${one(`মডেল: Gemma 4 (${esc(r.engine.model)}), ${where}। মোট সময় ${secs} সেকেন্ড।`, `Model: Gemma 4 (${esc(r.engine.model)}) on ${where}. Total ${secs} s.`)}${r.card?.source ? `<br>${esc(r.card.source)}` : ""}</p>`);
   $("#result").innerHTML = parts.join("");
+  // Bring the verdict to the middle of the screen once it lands, unless it is already near the top.
+  const verdict = $(".verdict");
+  const box = verdict && verdict.getBoundingClientRect();
+  if (box && (box.top < 0 || box.top > window.innerHeight * 0.55)) {
+    setTimeout(() => verdict.scrollIntoView({ behavior: "smooth", block: "center" }), 350);
+  }
   const listen = $("#listen");
   if (listen) listen.addEventListener("click", () => speakResult(r));
   const copy = $("#copy-letter");

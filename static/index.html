@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&family=Homemade+Apple&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='10' fill='none' stroke='%230b5d3b' stroke-width='7'/%3E%3Cpath d='M20 33l9 9 16-19' fill='none' stroke='%230b5d3b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=7">
 </head>
 <body>
   <header class="hero">
@@ -27,6 +27,10 @@
         <div class="cta-row">
           <button type="button" class="primary cta" id="cta-snap"><span class="bn">ছবি দিন</span><span class="en">Snap a photo</span></button>
           <button type="button" class="ghost cta" id="cta-sample"><span class="bn">নমুনা দিয়ে দেখুন</span><span class="en">Try a sample</span></button>
+        </div>
+        <div class="hero-rail">
+          <p class="rail-caption"><span class="bn-only">৬ ধাপের AI হারনেস: নীল ধাপে Gemma 4 দেখে ও লেখে, সবুজ ধাপে কোড সিদ্ধান্ত নেয়</span><span class="en-only">The 6-step AI harness: Gemma 4 sees and writes in the blue steps, code decides in the green ones</span></p>
+          <div class="rail demo" id="hero-rail" aria-hidden="true"></div>
         </div>
         <details class="how">
           <summary><span class="bn">Gemma কীভাবে যাচাই করে</span><span class="en">How the AI harness works</span></summary>
@@ -46,6 +50,7 @@
           <span class="mini-line w80"></span><span class="mini-line w55"></span><span class="mini-line w90"></span>
           <span class="mini-line w70"></span><span class="mini-line w85"></span><span class="mini-line w40"></span>
           <span class="mini-sig">Rafiya</span>
+          <span class="mini-scan"></span>
           <span class="mini-stamp bad"><span class="bn-only">ফেরত আসবে</span><span class="en-only">Returned</span></span>
           <span class="mini-stamp good"><span class="bn-only">জমা দিন</span><span class="en-only">Ready</span></span>
         </div>
@@ -95,6 +100,7 @@
       </div>
 
       <div class="dock" id="dock">
+        <button type="button" class="ghost edit-btn" id="edit-btn" hidden><span class="bn">← আবার বদলান বা নতুন ছবি দিন</span><span class="en">← Edit again or use a new photo</span></button>
         <figure class="sheet" id="sheet" hidden>
           <img id="preview" alt="The document that will be checked">
           <div class="stamp" id="stamp" hidden></div>
@@ -106,6 +112,7 @@
     <section class="output-pane" aria-label="Check result">
       <div class="slip">
         <h2><span class="bn">যাচাইয়ের ধাপ</span><span class="en">How the check runs</span></h2>
+        <div class="rail demo" id="live-rail" aria-hidden="true"></div>
         <ol id="trace" class="trace" aria-live="polite"></ol>
       </div>
       <div id="result" class="result" aria-live="polite"></div>
@@ -116,6 +123,6 @@
     <p><span class="bn-only">নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। চলে open-weights Gemma 4 দিয়ে।</span><span class="en-only">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
   </footer>
 
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=7"></script>
 </body>
 </html>
