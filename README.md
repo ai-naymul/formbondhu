@@ -108,15 +108,15 @@ When deployed, use webhook mode instead: set `TELEGRAM_WEBHOOK_SECRET`, then poi
 
 **Handwritten letters** (`python eval/run_eval.py --set handwriting`, full table in [eval/RESULTS_HANDWRITING.md](eval/RESULTS_HANDWRITING.md)):
 - The English application letters were converted to handwriting on lined paper with an online text-to-handwriting tool ([codeshack.io](https://codeshack.io/text-to-handwriting/)), in three styles from neat print to cursive.
-- The Bangla leave letter uses the Galada handwriting-style font.
+- The Bangla leave letter uses the Galada handwriting-style font, signed either with a single wavy pen line or a cursive name.
 
 | Measure | Result |
 |---|---|
-| Exact result | 8 / 8 |
-| Planted problems caught | 15 / 15 |
+| Exact result | 10 / 10 |
+| Planted problems caught | 18 / 18 |
 | False alarms | 0 |
 
-On the first run, the two Bangla letters were flagged "not signed", because their "signature" was just the name written in the same lettering as the rest of the letter. That run is kept in [eval/RESULTS_HANDWRITING_run1_name_as_signature.md](eval/RESULTS_HANDWRITING_run1_name_as_signature.md). With an actual pen-stroke signature, both pass.
+On the first run, the two Bangla letters were flagged "not signed", because their "signature" was just the name written in the same lettering as the rest of the letter. That run is kept in [eval/RESULTS_HANDWRITING_run1_name_as_signature.md](eval/RESULTS_HANDWRITING_run1_name_as_signature.md). A later manual test showed a thin wavy-line signature could still be missed now and then. The prompts now say a cursive name, initials or one wavy pen line all count as a signature, and the double-check only confirms "not signed" when the area is blank. After that change both test sets pass in full.
 
 Limits: all of these are generated images, not photos of real paper written by a person. Real handwriting photographed on a phone is the next test set.
 
