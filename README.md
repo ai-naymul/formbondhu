@@ -2,7 +2,7 @@
 
 Photograph a filled university form or a handwritten application letter (দরখাস্ত). An AI harness built on **open-weights Gemma 4** finds what will get it returned at the office window, explains each fix in Bangla and English, and for letters writes a corrected version from the student's own details, before the trip to the office.
 
-**Live app: https://formbondhu.vercel.app** · Repo: https://github.com/ai-naymul/formbondhu · Demo video: _added after recording_
+**Live app: https://formbondhu.vercel.app** · Repo: https://github.com/ai-naymul/formbondhu · Demo video: [demo/formbondhu-story.mp4](https://github.com/ai-naymul/formbondhu/raw/master/demo/formbondhu-story.mp4) (62 s)
 
 For judges: the full end-to-end technical walkthrough is in [docs/JUDGE_PACK.md](docs/JUDGE_PACK.md).
 
@@ -183,6 +183,8 @@ demo/              pitch script, manual test guide, handwriting sheets, deploy g
 A check takes about 15–30 seconds on the free API; letters take longest because of the drafting step.
 
 ## Screenshots / demo
+
+**Video (62 s, 1080p):** [demo/formbondhu-story.mp4](https://github.com/ai-naymul/formbondhu/raw/master/demo/formbondhu-story.mp4). It covers the first-semester story, the six-step harness and a real check of a handwritten transcript letter. Every screen in it is a capture of the running app.
 
 | Desktop (live site, transcript letter with three mistakes) | Phone, 390 px |
 |---|---|
