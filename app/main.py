@@ -3,13 +3,14 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.gemma import engines_status
 from app.harness import run
 from app.rules import load_cards
+from app.telegram_bot import handle_update
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_BYTES = 4 * 1024 * 1024  # Vercel rejects request bodies over 4.5 MB; the browser shrinks photos well below this
@@ -75,6 +76,16 @@ async def check(image: UploadFile = File(...), backend: str | None = Form(None),
 
     return StreamingResponse(events(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.post("/api/telegram/{secret}")
+async def telegram_webhook(secret: str, update: dict = Body(...)):
+    """Telegram webhook for the deployed bot; the secret path keeps strangers from posting fake updates."""
+    expected = os.environ.get("TELEGRAM_WEBHOOK_SECRET")
+    if not expected or secret != expected:
+        raise HTTPException(404, "Not found")
+    await handle_update(update, CARDS, await _pick_engine(None, None))
+    return {"ok": True}
 
 
 # Mounted after the routes so API paths always reach the function (Vercel promotes this mount to its CDN).

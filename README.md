@@ -63,6 +63,7 @@ flowchart LR
   - By default it runs through the free [Google AI Studio](https://aistudio.google.com) API.
   - Or run any Gemma 4 model on your own machine with [Ollama](https://ollama.com/library/gemma4).
   - No closed models are used anywhere.
+- **Interfaces:** a phone-first web app, and a Telegram bot that runs the same harness.
 - **Tech stack:** Python 3.12, FastAPI, httpx, Pydantic. Plain HTML, CSS and JavaScript (no build step), with a canvas-drawn Form maker for forms and ruled-paper letters. pytest. Vercel.
 - **Datasets:** none. The rule cards are sample data marked `"sample_data": true`; offices, fees and formats in them are not official IIUC policy. The images in `samples/` are synthetic.
 - **Add a document:** drop one JSON file into `rules/` with its kind (form or letter), fields, signatures, rules, attachments, office route and three demo mistakes. No code changes needed.
@@ -81,9 +82,31 @@ flowchart LR
    - **Your own machine (local Gemma 4):** install [Ollama](https://ollama.com), then run `ollama pull gemma4:e4b` (use `gemma4:e2b` on 8 GB RAM) and keep Ollama running. The engine bar lists every Gemma model Ollama has; choose **Local Ollama**. To make it the default, set `DEFAULT_BACKEND=ollama` in `.env`. Nothing leaves your machine in this mode.
 3. Run the app with `uvicorn app.main:app --reload` and open http://localhost:8000.
    - To try it from a phone on the same Wi-Fi, run `uvicorn app.main:app --host 0.0.0.0` and open `http://<laptop-ip>:8000`.
-4. Run the tests with `pytest`. There are 53 tests: rule mutation tests, a check that every card's demo mistakes trip exactly three rules, offline engine tests, and draft-grounding tests.
+4. Run the tests with `pytest`. There are 57 tests: rule mutation tests, a check that every card's demo mistakes trip exactly three rules, offline engine and Telegram tests, and draft-grounding tests. `pip install -r requirements-dev.txt` also installs Pillow for the evaluation.
+
+**Telegram bot (same harness, no app to install):** students already share photos in chat apps, and a bot works on any phone over weak mobile data.
+1. Create a bot with [@BotFather](https://t.me/BotFather) and put `TELEGRAM_BOT_TOKEN` in `.env`.
+2. Run `python -m app.telegram_bot` from the project folder. This polls Telegram, so it works from a laptop with no public URL.
+3. Send the bot a photo of a form or application letter. It replies with the verdict, Bangla fixes, the corrected letter for application letters, and the office route.
+
+When deployed, use webhook mode instead: set `TELEGRAM_WEBHOOK_SECRET`, then point Telegram at `https://<your-domain>/api/telegram/<secret>` with `setWebhook`.
 
 **Deploy:** `vercel.json` is included. Set `GEMMA_API_KEY` as a Vercel environment variable. On a hosted copy, Local Ollama shows as unavailable; clone the repo to use your own Gemma.
+
+## Evaluation
+
+`python eval/run_eval.py` sends every rule card through the live `/api/check`, both filled correctly and with its three demo mistakes. Each image is tested twice: as a crisp render, and as a simulated phone photo (3.5° tilt, blur, shrunk, JPEG quality 55). The expected problems are fixed in advance by applying the card's rules to a perfect read. Full table: [eval/RESULTS.md](eval/RESULTS.md).
+
+| Measure | Result |
+|---|---|
+| Exact result (right document and exactly the expected problems) | 20 / 20 |
+| Planted problems caught (recall) | 30 / 30 |
+| Flags that were real problems (precision) | 30 / 30 |
+| False alarms on the 10 correctly filled documents | 0 |
+| Corrected letters passing the ID grounding check | 4 / 4 |
+| Time per check | median 23 s, max 30 s |
+
+Limits: these images come from the app's own Form maker, written in a handwriting-style font, so the results prove the pipeline end to end but not accuracy on real handwriting. Photos of real handwritten paper are the next test set.
 
 ## Screenshots / demo
 
@@ -107,3 +130,5 @@ flowchart LR
 - Fonts: Anek Bangla, Tiro Bangla and Caveat from Google Fonts.
 - Cream palette adapted from BanglaLLM's [BanglaSafe](https://banglallm.github.io/banglasafe/) page.
 - Built with help from Claude Code, an AI coding assistant, as the rulebook allows.
+
+License: MIT.

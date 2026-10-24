@@ -596,6 +596,7 @@ function renderResult(r) {
     const headline = r.status === "problems" ? `${bnDigits(count)}টি কারণে ফর্মটি ফেরত আসবে` : v.bn;
     parts.push(`<span class="badge">নমুনা নিয়ম / sample rules</span>`);
     parts.push(`<p class="verdict ${v.cls}">${headline}</p><p class="verdict-en">${esc(r.card.title_en)}: ${esc(v.en(count))}</p>`);
+    if ("speechSynthesis" in window) parts.push(`<button type="button" class="ghost listen-btn" id="listen">শুনুন<span class="en">Read the result aloud</span></button>`);
     if (count) {
       parts.push(`<h3>যা ঠিক করতে হবে<span class="en">Fix before you go</span></h3><ul class="problems">${r.problems.map(problemItem).join("")}</ul>`);
     }
@@ -620,12 +621,35 @@ function renderResult(r) {
   const where = r.engine.backend === "ollama" ? "local Ollama" : "Google AI Studio";
   parts.push(`<p class="run-meta">মডেল: Gemma 4 (${esc(r.engine.model)}) on ${where}. মোট সময় ${(r.ms / 1000).toFixed(1)} সেকেন্ড.${r.card?.source ? `<br>${esc(r.card.source)}` : ""}</p>`);
   $("#result").innerHTML = parts.join("");
+  const listen = $("#listen");
+  if (listen) listen.addEventListener("click", () => speakResult(r, headline(r)));
   const copy = $("#copy-letter");
   if (copy) {
     copy.addEventListener("click", async () => {
       try { await navigator.clipboard.writeText(r.draft.letter); copy.firstChild.textContent = "কপি হয়েছে"; } catch (_) { copy.firstChild.textContent = "কপি করা যায়নি"; }
     });
   }
+}
+
+function headline(r) {
+  const count = (r.problems || []).length;
+  return r.status === "problems" ? `${bnDigits(count)}টি কারণে ফর্মটি ফেরত আসবে` : VERDICT[r.status].bn;
+}
+
+/* Reads the verdict and each fix aloud for students who cannot read the screen easily.
+   Uses a Bangla voice when the device has one, otherwise the English version of each fix. */
+function speakResult(r, title) {
+  speechSynthesis.cancel();
+  const voices = speechSynthesis.getVoices();
+  const bnVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("bn"));
+  const items = [...(r.problems || []), ...(r.manual || [])];
+  const text = bnVoice
+    ? [title, ...items.map((p) => `${p.label_bn}: ${p.fix_bn}`)].join("। ")
+    : [VERDICT[r.status].en(items.length), ...items.map((p) => `${p.label_en}: ${p.fix_en}`)].join(". ");
+  const u = new SpeechSynthesisUtterance(text);
+  if (bnVoice) { u.voice = bnVoice; u.lang = bnVoice.lang; } else { u.lang = "en-US"; }
+  u.rate = 0.95;
+  speechSynthesis.speak(u);
 }
 
 function problemItem(p) {

@@ -211,3 +211,4 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px s
 .letter-box { position: relative; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 12px; }
 .letter { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 500 21px/1.5 "Caveat", "Tiro Bangla", cursive; color: var(--pen); }
 .letter-box .copy-btn { float: right; margin: 0 0 8px 8px; padding: 6px 12px; font-size: 14px; }
+.listen-btn { margin: 4px 0 4px; padding: 6px 14px; font-size: 15px; }
