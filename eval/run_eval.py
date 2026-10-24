@@ -122,6 +122,7 @@ def main():
     parser.add_argument("--base", default="http://localhost:8000")
     parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--set", choices=["rendered", "handwriting"], default="rendered")
+    parser.add_argument("--tag", default="", help="suffix for the results file, e.g. 'live' for the deployed site")
     args = parser.parse_args()
     cases = build_cases() if args.set == "rendered" else build_handwriting_cases()
     print(f"{len(cases)} cases, {args.workers} at a time", flush=True)
@@ -172,9 +173,10 @@ def main():
               "(codeshack.io, three handwriting styles from neat to cursive), Bangla in the Galada handwriting-style font,",
               "all on lined paper. Expected problems are written in `eval/handwriting/expected.json` before the run."])
     report = [f"# FormBondhu evaluation: {args.set}", "", *intro, "",
-              f"Run: {time.strftime('%Y-%m-%d %H:%M')}, engine: server default", "", "## Summary", "", *summary, "",
+              f"Run: {time.strftime('%Y-%m-%d %H:%M')} against {args.base}, engine: server default", "", "## Summary", "", *summary, "",
               "## Every case", "", "| Case | Exact | Flagged | Notes | Time |", "|---|---|---|---|---|", *rows, ""]
-    (EVAL / ("RESULTS.md" if args.set == "rendered" else "RESULTS_HANDWRITING.md")).write_text("\n".join(report))
+    name = "RESULTS" if args.set == "rendered" else "RESULTS_HANDWRITING"
+    (EVAL / f"{name}{'_' + args.tag.upper() if args.tag else ''}.md").write_text("\n".join(report))
     print("\n".join(summary))
     print("\n".join(rows))
 

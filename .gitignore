@@ -7,3 +7,4 @@ __pycache__/
 .playwright-mcp/
 eval/rendered.json
 eval/handwriting_tool.json
+.vercel
