@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&family=Homemade+Apple&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='10' fill='none' stroke='%230b5d3b' stroke-width='7'/%3E%3Cpath d='M20 33l9 9 16-19' fill='none' stroke='%230b5d3b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css?v=7">
+  <link rel="stylesheet" href="/static/style.css?v=10">
 </head>
 <body>
   <header class="hero">
@@ -28,10 +28,10 @@
           <button type="button" class="primary cta" id="cta-snap"><span class="bn">ছবি দিন</span><span class="en">Snap a photo</span></button>
           <button type="button" class="ghost cta" id="cta-sample"><span class="bn">নমুনা দিয়ে দেখুন</span><span class="en">Try a sample</span></button>
         </div>
-        <div class="hero-rail">
-          <p class="rail-caption"><span class="bn-only">৬ ধাপের AI হারনেস: নীল ধাপে Gemma 4 দেখে ও লেখে, সবুজ ধাপে কোড সিদ্ধান্ত নেয়</span><span class="en-only">The 6-step AI harness: Gemma 4 sees and writes in the blue steps, code decides in the green ones</span></p>
-          <div class="rail demo" id="hero-rail" aria-hidden="true"></div>
-        </div>
+        <p class="more-links">
+          <a href="#story-section"><span class="bn-only">গল্পটা পড়ুন</span><span class="en-only">Read the story</span></a>
+          <a href="#architecture"><span class="bn-only">আর্কিটেকচার দেখুন</span><span class="en-only">View the architecture</span></a>
+        </p>
         <details class="how">
           <summary><span class="bn">Gemma কীভাবে যাচাই করে</span><span class="en">How the AI harness works</span></summary>
           <ol class="how-steps">
@@ -45,14 +45,28 @@
           <p class="how-rule"><span class="bn-only">Gemma দেখে, কোড সিদ্ধান্ত নেয়।</span><span class="en-only">Gemma sees, code decides.</span></p>
         </details>
       </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="mini-paper">
-          <span class="mini-line w80"></span><span class="mini-line w55"></span><span class="mini-line w90"></span>
-          <span class="mini-line w70"></span><span class="mini-line w85"></span><span class="mini-line w40"></span>
-          <span class="mini-sig">Rafiya</span>
-          <span class="mini-scan"></span>
-          <span class="mini-stamp bad"><span class="bn-only">ফেরত আসবে</span><span class="en-only">Returned</span></span>
-          <span class="mini-stamp good"><span class="bn-only">জমা দিন</span><span class="en-only">Ready</span></span>
+      <div class="hero-art">
+        <div class="story" id="story">
+          <p class="story-title"><span class="bn-only">ভেতরে কী হয়: ৬ ধাপের AI হারনেস</span><span class="en-only">Inside: the 6-step AI harness</span></p>
+          <div class="mini-paper" aria-hidden="true">
+            <span class="mini-tag"><span class="bn-only">দরখাস্ত: ট্রান্সক্রিপ্ট</span><span class="en-only">Letter: transcript</span></span>
+            <span class="mini-line w80"><i class="mark ok m1">✓</i></span>
+            <span class="mini-line w55"><i class="mark bad m2">✗</i><i class="lens"></i></span>
+            <span class="mini-line w90"><i class="mark ok m3">✓</i></span>
+            <span class="mini-line w70"><i class="mark bad m4">✗</i></span>
+            <span class="mini-line w85"></span><span class="mini-line w40"></span>
+            <span class="mini-sig">Rafiya</span>
+            <span class="mini-scan"></span>
+            <span class="mini-bubble"><span class="bn-only">তারিখ লিখুন: 05/11/2026</span><span class="en-only">Write the date as 05/11/2026</span></span>
+            <span class="mini-stamp bad"><span class="bn-only">ফেরত আসবে</span><span class="en-only">Returned</span></span>
+            <span class="mini-stamp good"><span class="bn-only">জমা দিন</span><span class="en-only">Ready</span></span>
+          </div>
+          <div class="rail story-rail" id="hero-rail"></div>
+          <div class="story-caps" id="story-caps" aria-live="polite"></div>
+          <div class="story-controls">
+            <button type="button" class="ghost story-toggle" id="story-toggle"></button>
+            <span class="story-hint"><span class="bn-only">যেকোনো ধাপে চাপ দিয়ে থামান</span><span class="en-only">Tap any step to stop on it</span></span>
+          </div>
         </div>
       </div>
     </div>
@@ -112,17 +126,79 @@
     <section class="output-pane" aria-label="Check result">
       <div class="slip">
         <h2><span class="bn">যাচাইয়ের ধাপ</span><span class="en">How the check runs</span></h2>
-        <div class="rail demo" id="live-rail" aria-hidden="true"></div>
+        <div class="rail idle" id="live-rail" aria-hidden="true"></div>
         <ol id="trace" class="trace" aria-live="polite"></ol>
       </div>
       <div id="result" class="result" aria-live="polite"></div>
     </section>
   </main>
 
+  <section class="wrap deep" id="story-section">
+    <h2><span class="bn-only">গল্পটা যেভাবে শুরু</span><span class="en-only">Why I built this</span></h2>
+    <div class="story-text">
+      <p class="bn-only">প্রথম সেমিস্টারে কয়েক দিনের ছুটির দরকার হয়েছিল। দরখাস্ত কার বরাবর লিখব, কোন ফরম্যাটে, সাথে কী দিতে হবে, কেউ বলে দেয়নি। ঠিকঠাক করে জমা দিতে কয়েকবার যাওয়া-আসা করতে হয়েছিল, শুধু একটা ছুটির দরখাস্তের জন্য।</p>
+      <p class="en-only">In my first semester I needed a few days of leave. Nobody told me who to address the application to, what format it needed, or what to attach. Getting one simple leave application right took several trips to the office.</p>
+      <p class="bn-only">ক্যাম্পাসে প্রায় সবারই এমন গল্প আছে: ভুল অফিসে দরখাস্ত, ভুল ফরম্যাটে তারিখ, বাদ পড়া স্বাক্ষর। কুমিরা ক্যাম্পাসে প্রতিটি ভুল মানে আরেকবার লম্বা বাসযাত্রা। ফর্মবন্ধু সেই সমস্যার জন্য: অফিসে যাওয়ার আগেই ফোনে ছবি তুলে ভুলটা ধরা, বাংলায় ঠিক করার উপায় জানা, আর দরকার হলে দরখাস্তটা নতুন করে লিখে নেওয়া।</p>
+      <p class="en-only">Almost everyone on campus has a story like this: the wrong office, a date in the wrong format, a missing signature. At the Kumira campus every mistake means another long bus ride. FormBondhu is for that moment: photograph the paper before you go, see what will get it returned, read the fix in Bangla, and get the letter rewritten if needed.</p>
+    </div>
+  </section>
+
+  <section class="wrap deep" id="architecture">
+    <h2><span class="bn-only">আর্কিটেকচার</span><span class="en-only">Architecture</span></h2>
+    <p class="arch-lede"><span class="bn-only">একটি যাচাই যেভাবে চলে, ক্লায়েন্ট থেকে মডেল পর্যন্ত</span><span class="en-only">How one check flows, from client to model</span></p>
+    <div class="arch">
+      <div class="layer">
+        <p class="layer-name">Interfaces</p>
+        <div class="boxes">
+          <div class="box">Web app <small>Vanilla JS, canvas Form maker, SSE stream reader, bilingual UI</small></div>
+          <div class="box">Telegram bot <small>long-polling on a laptop, webhook on Vercel</small></div>
+        </div>
+      </div>
+      <p class="arch-arrow">multipart image ↓ POST /api/check</p>
+      <div class="layer">
+        <p class="layer-name">API: FastAPI on Vercel Fluid compute (Python 3.12, maxDuration 180 s)</p>
+        <div class="boxes">
+          <div class="box mono">POST /api/check <small>Server-Sent Events, one event per harness step</small></div>
+          <div class="box mono">GET /api/engines <small>live engine discovery (AI Studio key, Ollama /api/tags)</small></div>
+          <div class="box mono">GET /api/cards, /api/health <small>POST /api/telegram/{secret}</small></div>
+        </div>
+      </div>
+      <p class="arch-arrow">async generator ↓ harness.run()</p>
+      <div class="layer">
+        <p class="layer-name">Harness: app/harness.py, app/rules.py</p>
+        <ol class="pipe">
+          <li class="ai"><b>1 Read</b><span class="tag">AI</span><small>Gemma 4 vision → strict JSON, Pydantic-validated, one self-repair retry</small></li>
+          <li class="code"><b>2 Match</b><span class="tag">CODE</span><small>title/alias similarity, form vs letter aware; unknown document → refuse</small></li>
+          <li class="code"><b>3 Rules</b><span class="tag">CODE</span><small>rule engine: required, pattern, date, contains_any, signature, photo; Bangla digits normalised</small></li>
+          <li class="ai"><b>4 Re-check</b><span class="tag">AI</span><small>second vision pass per flag; unconfirmed → manual review, never asserted</small></li>
+          <li class="ai"><b>5 Fix</b><span class="tag">AI</span><small>grounded generation from rule text; unknown rule IDs dropped</small></li>
+          <li class="ai"><b>6 Draft</b><span class="tag">AI + CODE</span><small>letter rewrite; regex ID grounding replaces any invented student ID</small></li>
+        </ol>
+        <p class="arch-note">Steps 4, 5 and 6 run concurrently (asyncio.as_completed). Gemma sees, code decides.</p>
+      </div>
+      <p class="arch-arrow">httpx async ↓ JSON mode, thinkingLevel minimal, retry + backoff on 429/5xx</p>
+      <div class="layer">
+        <p class="layer-name">Engines: app/gemma.py (open-weights only)</p>
+        <div class="boxes">
+          <div class="box ai">Gemma 4 31B IT <small>Google AI Studio API (hosted, free tier)</small></div>
+          <div class="box ai">Gemma 4 e2b / e4b <small>Ollama /api/chat on your own machine</small></div>
+        </div>
+      </div>
+      <div class="layer">
+        <p class="layer-name">Ground truth and quality</p>
+        <div class="boxes">
+          <div class="box code">5 rule cards (JSON) <small>3 forms incl. IIUC Bus Requisition fields, 2 application letters</small></div>
+          <div class="box code">67 pytest <small>mutation tests, mocked engines, Telegram, grounding</small></div>
+          <div class="box code">Eval 30 / 30 <small>20 rendered + 10 handwritten cases, 0 false alarms</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="wrap foot">
     <p><span class="bn-only">নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। চলে open-weights Gemma 4 দিয়ে।</span><span class="en-only">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
   </footer>
 
-  <script src="/static/app.js?v=7"></script>
+  <script src="/static/app.js?v=10"></script>
 </body>
 </html>

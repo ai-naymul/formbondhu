@@ -41,6 +41,12 @@ def cards():
     return list(CARDS.values())
 
 
+@app.get("/api/health")
+def health():
+    """For uptime checks after deploy: confirms the app booted and found its rule cards."""
+    return {"ok": True, "cards": len(CARDS), "default_engine": os.environ.get("DEFAULT_BACKEND", "aistudio")}
+
+
 @app.get("/api/engines")
 async def engines():
     return await engines_status()

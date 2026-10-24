@@ -31,12 +31,24 @@ const STAMP_TEXT = {
 
 /* The harness rail: one node per step; blue nodes are Gemma 4, green nodes are plain code. */
 const RAIL = [
-  { id: "read", ai: true, bn: "পড়া", en: "Read", icon: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' },
-  { id: "match", ai: false, bn: "মেলানো", en: "Match", icon: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>' },
-  { id: "audit", ai: false, bn: "নিয়ম", en: "Rules", icon: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>' },
-  { id: "verify", ai: true, bn: "পুনর্দেখা", en: "Re-check", icon: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>' },
-  { id: "explain", ai: true, bn: "সমাধান", en: "Fix", icon: '<path d="M4 5h16v11H9l-5 4z"/>' },
-  { id: "draft", ai: true, bn: "দরখাস্ত", en: "Draft", icon: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>' },
+  { id: "read", ai: true, bn: "পড়া", en: "Read",
+    say: ["Gemma 4 ছবিটা পড়ে প্রতিটি লেখা হুবহু তুলে আনে", "Gemma 4 reads the photo and copies every value exactly"],
+    tech: "Gemma 4 vision → strict JSON, Pydantic-validated, 1 self-repair retry", icon: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' },
+  { id: "match", ai: false, bn: "মেলানো", en: "Match",
+    say: ["কোড বুঝে নেয় এটা কোন ফর্ম বা দরখাস্ত", "Code works out which form or letter it is"],
+    tech: "Deterministic matcher → rule card (form/letter aware); unknown → refuse", icon: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>' },
+  { id: "audit", ai: false, bn: "নিয়ম", en: "Rules",
+    say: ["অফিসের প্রতিটি নিয়ম কোড দিয়ে মিলিয়ে দেখে", "Code checks every office rule"],
+    tech: "Rule engine: required · pattern · date · contains_any · signature · photo", icon: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>' },
+  { id: "verify", ai: true, bn: "পুনর্দেখা", en: "Re-check",
+    say: ["Gemma আবার ছবিতে দেখে, ভুলটা সত্যিই আছে কি না", "Gemma looks again to confirm each problem"],
+    tech: "Second vision pass per flag; unconfirmed → manual review", icon: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/>' },
+  { id: "explain", ai: true, bn: "সমাধান", en: "Fix",
+    say: ["কীভাবে ঠিক করবেন, বাংলায় লিখে দেয়", "It explains each fix in plain Bangla and English"],
+    tech: "Grounded generation from rule text; unknown rule IDs dropped", icon: '<path d="M4 5h16v11H9l-5 4z"/>' },
+  { id: "draft", ai: true, bn: "দরখাস্ত", en: "Draft",
+    say: ["দরখাস্ত হলে আপনার তথ্য দিয়েই নতুন করে লিখে দেয়", "For letters, it rewrites the letter from your own details"],
+    tech: "Letter rewrite + code-side ID grounding (invented IDs removed)", icon: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>' },
 ];
 
 const state = { cards: [], engines: null, engineValue: "", engineNotes: [], cardId: null, blob: null, pads: {}, previewUrl: null, running: false };
@@ -49,18 +61,56 @@ const bi = (bn, en) => `<span class="bn">${bn}</span><span class="en">${en}</spa
 const one = (bn, en) => `<span class="bn-only">${bn}</span><span class="en-only">${en}</span>`;
 const lang = () => document.documentElement.dataset.lang || "bn";
 
-function buildRail(el) {
+function buildRail(el, interactive = false) {
+  const tag = interactive ? "button" : "span";
   el.innerHTML = `<div class="rail-track"><span class="rail-line"></span><span class="rail-dot"></span></div>
     <ol class="rail-nodes">${RAIL.map((n, i) => `<li class="node ${n.ai ? "ai" : "code"}" data-step="${n.id}" style="--i:${i}">
+      <${tag} class="node-btn" ${interactive ? `type="button" data-index="${i}" aria-label="${n.en}: ${n.say[1]}"` : ""}>
       <span class="node-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${n.icon}</svg></span>
-      <span class="node-label">${one(n.bn, n.en)}</span></li>`).join("")}</ol>
+      <span class="node-label">${one(n.bn, n.en)}</span></${tag}></li>`).join("")}</ol>
     <p class="rail-legend"><span class="lg ai">Gemma 4 (AI)</span><span class="lg code">${one("কোড (নিয়ম)", "Code (rules)")}</span></p>`;
 }
 
-/* Demo mode loops the dot along the rail; live mode mirrors the real run step by step. */
-function railDemo() {
+/* The storyboard in the hero plays the six steps on a 12 s loop (2 s per step).
+   Tapping a step seeks every animation in it to that step and pauses, so the story can be read at any pace. */
+const STORY_MS = 12000;
+const STEP_MS = 2000;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function buildStory() {
+  const story = $("#story");
+  buildRail($("#hero-rail"), true);
+  $("#story-caps").innerHTML = RAIL.map((n, i) => `<p class="cap" data-i="${i}" style="--i:${i}">
+    <span class="cap-step ${n.ai ? "ai" : "code"}">${i + 1}</span>
+    <span class="cap-text">${one(n.say[0], n.say[1])}<span class="cap-tech">${esc(n.tech)}</span></span></p>`).join("");
+  for (const btn of story.querySelectorAll(".node-btn")) btn.addEventListener("click", () => storySeek(Number(btn.dataset.index)));
+  $("#story-toggle").addEventListener("click", () => setStoryPaused(!story.classList.contains("paused")));
+  if (reducedMotion) storySeek(0);
+  else setStoryPaused(false);
+}
+
+function storySeek(index) {
+  const story = $("#story");
+  story.dataset.step = index;
+  if (!reducedMotion) {
+    for (const a of story.getAnimations({ subtree: true })) a.currentTime = STORY_MS + index * STEP_MS + 1100;
+  }
+  setStoryPaused(true);
+}
+
+function setStoryPaused(paused) {
+  const story = $("#story");
+  story.classList.toggle("paused", paused);
+  if (!reducedMotion) {
+    for (const a of story.getAnimations({ subtree: true })) (paused ? a.pause() : a.play());
+  }
+  $("#story-toggle").innerHTML = paused ? one("▶ চালান", "▶ Play") : one("⏸ থামান", "⏸ Pause");
+}
+
+/* The workspace rail stays still until a check starts; then it mirrors the real run step by step. */
+function railIdle() {
   const el = $("#live-rail");
-  el.className = "rail demo";
+  el.className = "rail idle";
   for (const node of el.querySelectorAll(".node")) node.classList.remove("running", "done", "skipped", "failed");
   el.style.removeProperty("--pos");
 }
@@ -94,7 +144,7 @@ function store(key, value) {
 
 async function init() {
   setLang(store(LANG_KEY) || "bn", false);
-  buildRail($("#hero-rail"));
+  buildStory();
   buildRail($("#live-rail"));
   for (const btn of document.querySelectorAll(".lang-switch button")) btn.addEventListener("click", () => setLang(btn.dataset.lang));
   const [cards, engines] = await Promise.all([
@@ -241,7 +291,7 @@ function setBlob(blob) {
   state.previewUrl = blob ? URL.createObjectURL(blob) : null;
   $("#sheet").hidden = !blob;
   if (blob) $("#preview").src = state.previewUrl;
-  if (!state.running) railDemo();
+  if (!state.running) railIdle();
 }
 
 /* ---------- form maker ---------- */

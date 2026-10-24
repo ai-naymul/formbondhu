@@ -101,3 +101,34 @@ def test_engines_status_running_ollama_without_gemma(mock_http):
     mock_http(lambda r: httpx.Response(200, json={"models": [{"name": "llama3:8b"}]}))
     ollama = asyncio.run(gemma.engines_status())["engines"][1]
     assert not ollama["available"] and "no Gemma model" in ollama["reason"]
+
+
+def test_aistudio_retries_once_on_rate_limit(mock_http, monkeypatch):
+    monkeypatch.setenv("GEMMA_API_KEY", "k")
+    monkeypatch.setattr(gemma, "RETRY_DELAY", 0)
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        if len(calls) == 1:
+            return httpx.Response(429, json={"error": "rate limited"})
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"ok": true}'}]}}]})
+
+    mock_http(handler)
+    data, _ = asyncio.run(gemma.generate_json("p", backend="aistudio"))
+    assert data == {"ok": True} and len(calls) == 2
+
+
+def test_aistudio_gives_a_clear_message_when_still_rate_limited(mock_http, monkeypatch):
+    monkeypatch.setenv("GEMMA_API_KEY", "k")
+    monkeypatch.setattr(gemma, "RETRY_DELAY", 0)
+    mock_http(lambda r: httpx.Response(429, json={"error": "rate limited"}))
+    with pytest.raises(gemma.GemmaError, match="rate limit"):
+        asyncio.run(gemma.generate_json("p", backend="aistudio"))
+
+
+def test_health_endpoint():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    body = TestClient(app).get("/api/health").json()
+    assert body["ok"] is True and body["cards"] == 5

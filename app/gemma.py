@@ -3,6 +3,7 @@
 Both engines run the same open-weights Gemma 4 family and return (parsed_json, meta) with
 meta = {"backend", "model", "ms"}, so the harness never needs to know which one answered.
 """
+import asyncio
 import base64
 import json
 import os
@@ -14,6 +15,8 @@ AISTUDIO_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:
 BACKENDS = ("aistudio", "ollama")
 OLLAMA_PULL_HINT = "ollama pull gemma4:e4b   (8 GB RAM: gemma4:e2b; all tags: https://ollama.com/library/gemma4)"
 _transport = None  # tests replace this with an httpx.MockTransport
+RETRY_STATUS = {429, 500, 502, 503, 504}
+RETRY_DELAY = 2.0  # seconds before the single retry; tests set it to 0
 
 
 class GemmaError(RuntimeError):
@@ -75,9 +78,22 @@ async def generate_json(prompt, *, image=None, mime="image/jpeg", backend=None, 
         if not key:
             raise GemmaError("GEMMA_API_KEY is not set")
         model = model or aistudio_model()
-        async with _client(90) as client:
-            resp = await client.post(AISTUDIO_URL.format(model=model), json=build_aistudio_body(prompt, image, mime),
-                                     headers={"x-goog-api-key": key})
+        # The free API sometimes rate-limits or hiccups; one retry after a short pause covers most of it.
+        for attempt in range(2):
+            try:
+                async with _client(90) as client:
+                    resp = await client.post(AISTUDIO_URL.format(model=model), json=build_aistudio_body(prompt, image, mime),
+                                             headers={"x-goog-api-key": key})
+            except httpx.TimeoutException as exc:
+                if attempt:
+                    raise GemmaError("Gemma 4 did not answer in time; please try again.") from exc
+                await asyncio.sleep(RETRY_DELAY)
+                continue
+            if resp.status_code not in RETRY_STATUS or attempt:
+                break
+            await asyncio.sleep(RETRY_DELAY)
+        if resp.status_code == 429:
+            raise GemmaError("The free Gemma 4 API is busy (rate limit). Wait a minute and try again.")
         parse = parse_aistudio
     elif backend == "ollama":
         if not model:
