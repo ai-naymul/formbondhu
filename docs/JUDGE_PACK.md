@@ -63,6 +63,10 @@ Everything needed to explain FormBondhu end to end: what it does, how every part
 
 ## 4. Architecture
 
+![FormBondhu architecture diagram](architecture.png)
+
+The same system as a Mermaid diagram:
+
 ```mermaid
 flowchart TB
   subgraph Clients

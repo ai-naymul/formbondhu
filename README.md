@@ -62,6 +62,10 @@ Steps 4–6 run concurrently with `asyncio.as_completed`. Each step is streamed 
 
 ### Architecture
 
+![FormBondhu architecture diagram: students, interfaces, the 6-step harness on Vercel, Gemma 4 engines and quality checks](docs/architecture.png)
+
+The same flow as a Mermaid diagram:
+
 ```mermaid
 flowchart TB
   subgraph Clients

@@ -427,3 +427,8 @@ html[data-lang="en"] .deep h2 { font: 800 clamp(22px, 3vw, 28px)/1.2 var(--f-ui)
 .pipe li.code .tag { background: var(--stamp-green); }
 .pipe small { display: block; font-size: 13px; color: var(--muted); }
 .arch-note { margin: 8px 0 0; font-size: 13.5px; font-weight: 700; color: var(--bottle); }
+
+/* Excalidraw architecture diagram: dark canvas, scaled to the column; tap opens it full size. */
+.arch-figure { margin: 0 0 14px; padding: 8px; background: #121212; border: 1px solid var(--rule); border-radius: var(--radius-sm); }
+.arch-figure img { display: block; width: 100%; height: auto; border-radius: 4px; }
+.arch-figure figcaption { margin-top: 6px; font-size: 13px; color: #cfc8bb; }

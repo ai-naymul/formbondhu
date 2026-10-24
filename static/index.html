@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&family=Homemade+Apple&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='10' fill='none' stroke='%230b5d3b' stroke-width='7'/%3E%3Cpath d='M20 33l9 9 16-19' fill='none' stroke='%230b5d3b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css?v=10">
+  <link rel="stylesheet" href="/static/style.css?v=11">
 </head>
 <body>
   <header class="hero">
@@ -146,6 +146,11 @@
   <section class="wrap deep" id="architecture">
     <h2><span class="bn-only">আর্কিটেকচার</span><span class="en-only">Architecture</span></h2>
     <p class="arch-lede"><span class="bn-only">একটি যাচাই যেভাবে চলে, ক্লায়েন্ট থেকে মডেল পর্যন্ত</span><span class="en-only">How one check flows, from client to model</span></p>
+    <figure class="arch-figure">
+      <a href="/static/architecture.png" target="_blank" rel="noopener"><img src="/static/architecture.png" width="2000" height="761" loading="lazy"
+        alt="FormBondhu architecture: students reach the web app or Telegram bot, which call the FastAPI service on Vercel; the 6-step harness reads with Gemma 4, matches and checks rules in code, then re-checks, fixes and drafts in parallel, using Gemma 4 on Google AI Studio or locally through Ollama"></a>
+      <figcaption><span class="bn-only">ডায়াগ্রামে চাপ দিলে পুরো আকারে খুলবে। নিচে প্রতিটি স্তর বিস্তারিত।</span><span class="en-only">Tap the diagram to open it full size. Each layer is detailed below.</span></figcaption>
+    </figure>
     <div class="arch">
       <div class="layer">
         <p class="layer-name">Interfaces</p>
@@ -199,6 +204,6 @@
     <p><span class="bn-only">নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। চলে open-weights Gemma 4 দিয়ে।</span><span class="en-only">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
   </footer>
 
-  <script src="/static/app.js?v=10"></script>
+  <script src="/static/app.js?v=11"></script>
 </body>
 </html>
