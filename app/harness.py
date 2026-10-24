@@ -80,7 +80,7 @@ For a form: form_title is the main printed title; give one entry per field row w
 For a letter: form_title is the subject line exactly as written (or the main request if there is no subject line). Give exactly one entry for each of
 these label_en values, in this order: {slots}. Addressee is the "To"/"বরাবর" lines (designation and office). Request is one short phrase saying what is asked for.
 Copy each value from the letter in its original language; leave it "" if the letter does not contain it.
-- signature_boxes: every place meant for a signature, labelled with its printed caption (for a letter, use "Student's Signature" for the sender's signature). has_ink is true only if pen strokes or a drawn signature are visible there.
+- signature_boxes: every place meant for a signature, labelled with its printed caption (for a letter, use "Student's Signature" for the sender's signature). has_ink is true if there is ANY handwritten mark there: a cursive name, initials, a scribble or even one wavy pen line all count as a signature. has_ink is false only if the place is blank.
 - photo_box: present is true if there is a box for a photo; filled is true if a photo or any picture is inside it.
 - language: "bn", "en" or "mixed", the main language the student wrote in.
 Return JSON exactly in this shape:
@@ -89,6 +89,8 @@ Return JSON exactly in this shape:
 VERIFY_PROMPT = """You are the double-check step of FormBondhu. A rule engine flagged the possible problems below on this form.
 Look at the image again carefully for each one. Confirm a problem only if you can actually see it in the image.
 If the image shows it is not a real problem (for example the signature is there, or the value is written correctly), set confirmed to false.
+For a missing-signature problem: look where the signature goes (above the printed name, under the closing such as "Yours obediently" or "বিনীত নিবেদক", or on the signature line).
+A signature can be a cursive name, initials, a scribble or a single wavy pen line. If there is ANY pen stroke there, the problem is NOT confirmed.
 In "seen", say in a few words exactly what you see at that spot, quoting any text exactly.
 Problems:
 {problems}
@@ -109,8 +111,8 @@ date, then "To"/"বরাবর" and the addressee lines, subject line, salutat
 Address it to: {addressee}
 Fix these problems:
 {problems}
-Keep every detail the student gave (purpose, dates, reasons). Use ONLY facts from the student's letter below. Where something required is missing, write a placeholder in square brackets,
-e.g. [your student ID] or [আপনার আইডি নম্বর]. Never invent names, IDs, dates, reasons or fees. Write numbers and IDs in English digits.
+Keep every detail the student gave (purpose, dates, reasons). Use ONLY facts from the student's letter below. Where something required is missing, write one short placeholder in square brackets,
+e.g. [your student ID] or [ছুটির তারিখ], with no extra words or slashes around it. Never invent names, IDs, dates, reasons or fees. Write numbers and IDs in English digits.
 Student's letter as read: {facts}
 Return JSON: {{"language": "bn or en", "letter": "the full letter with \\n line breaks", "placeholders": ["each placeholder you used"]}}"""
 

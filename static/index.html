@@ -1,62 +1,84 @@
 <!doctype html>
-<html lang="bn">
+<html lang="bn" data-lang="bn">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FormBondhu</title>
-  <meta name="description" content="Check a university paper form before the trip to the office. Gemma 4 finds what will get it returned and explains the fix in Bangla.">
+  <meta name="description" content="Check a university form or application letter before the trip to the office. Gemma 4 finds what will get it returned and explains the fix in Bangla.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..100,400..800&family=Tiro+Bangla&family=Caveat:wght@500&family=Homemade+Apple&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='10' fill='none' stroke='%230b5d3b' stroke-width='7'/%3E%3Cpath d='M20 33l9 9 16-19' fill='none' stroke='%230b5d3b' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=3">
 </head>
 <body>
-  <header class="masthead">
-    <div class="wrap">
-      <h1><span class="bn">ফর্মবন্ধু</span> <span class="en">FormBondhu</span></h1>
-      <p class="lede">অফিসে যাওয়ার আগে ফর্মটা মিলিয়ে নিন। Gemma 4 দেখে বলে দেবে কোথায় ভুল, আর কীভাবে ঠিক করবেন।</p>
-      <p class="lede-en">Check your paper form or application letter before the trip to the office. Gemma 4 finds what will get it returned and tells you how to fix it.</p>
-      <details class="how">
-        <summary>Gemma কীভাবে যাচাই করে <span class="en">How the AI harness works</span></summary>
-        <ol class="how-steps">
-          <li><b>পড়া</b> Gemma 4 ছবি দেখে বোঝে এটা ফর্ম না দরখাস্ত, আর প্রতিটি লেখা হুবহু তুলে আনে। <span class="en">Read: Gemma 4 decides whether it is a form or a letter and copies every value exactly as written, plus signature and photo boxes.</span></li>
-          <li><b>মেলানো</b> কোড নথিটিকে একটি নিয়মের কার্ডের সাথে মেলায়; অচেনা নথি হলে সোজাসুজি বলে দেয়। <span class="en">Match: code picks the rule card; an unknown document is refused, never guessed.</span></li>
-          <li><b>যাচাই</b> কোড কার্ডের প্রতিটি নিয়ম মেলায়: তারিখ, আইডি, মোবাইল নম্বর, সঠিক অফিস, স্বাক্ষর। <span class="en">Check: code applies every rule on the card: dates, IDs, phone numbers, the right office, signatures.</span></li>
-          <li><b>আবার দেখা</b> Gemma 4 প্রতিটি সমস্যা ছবিতে আবার দেখে নিশ্চিত করে। <span class="en">Double-check: Gemma 4 looks at the image again; anything it cannot confirm goes to "check yourself".</span></li>
-          <li><b>সমাধান</b> Gemma 4 শুধু নিয়মের লেখা ব্যবহার করে বাংলায় সমাধান লেখে। <span class="en">Fix: Gemma 4 explains each fix in Bangla using only the rule's own text.</span></li>
-          <li><b>দরখাস্ত</b> দরখাস্তের বেলায় Gemma 4 আপনার তথ্য দিয়েই সংশোধিত চিঠি লেখে; কোড পরীক্ষা করে কোনো বানানো আইডি ঢুকল কি না। <span class="en">Draft: for letters, Gemma 4 rewrites the letter from your own details; code removes any student ID the model made up.</span></li>
-        </ol>
-        <p class="how-rule">Gemma দেখে, কোড সিদ্ধান্ত নেয়। <span class="en">Gemma sees, code decides: every problem points to a written rule, the second look can only remove problems, and fees or offices come only from the rule cards.</span></p>
-      </details>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <div class="brand-row">
+          <p class="brand"><span class="bn">ফর্মবন্ধু</span><span class="brand-en">FormBondhu</span></p>
+          <div class="lang-switch" role="radiogroup" aria-label="Language">
+            <button type="button" role="radio" data-lang="bn" aria-checked="true">বাংলা</button>
+            <button type="button" role="radio" data-lang="en" aria-checked="false">English</button>
+          </div>
+        </div>
+        <h1><span class="bn-only">অফিসে যাওয়ার আগেই ভুলটা ধরুন</span><span class="en-only">Catch the mistake before the office does</span></h1>
+        <p class="lede"><span class="bn-only">ফর্ম বা দরখাস্তের ছবি দিন। Gemma 4 পড়ে বলবে কেন ফেরত আসবে, বাংলায় ঠিক করার উপায় দেখাবে, আর দরখাস্ত নতুন করে লিখে দেবে।</span><span class="en-only">Snap a filled form or application letter. Gemma 4 finds what will get it sent back, tells you how to fix it, and rewrites your letter.</span></p>
+        <div class="cta-row">
+          <button type="button" class="primary cta" id="cta-snap"><span class="bn">ছবি দিন</span><span class="en">Snap a photo</span></button>
+          <button type="button" class="ghost cta" id="cta-sample"><span class="bn">নমুনা দিয়ে দেখুন</span><span class="en">Try a sample</span></button>
+        </div>
+        <details class="how">
+          <summary><span class="bn">Gemma কীভাবে যাচাই করে</span><span class="en">How the AI harness works</span></summary>
+          <ol class="how-steps">
+            <li><span class="bn-only"><b>পড়া:</b> Gemma 4 ছবি দেখে বোঝে এটা ফর্ম না দরখাস্ত, আর প্রতিটি লেখা হুবহু তুলে আনে।</span><span class="en-only"><b>Read:</b> Gemma 4 decides whether it is a form or a letter and copies every value exactly as written, plus signature and photo boxes.</span></li>
+            <li><span class="bn-only"><b>মেলানো:</b> কোড নথিটিকে একটি নিয়মের কার্ডের সাথে মেলায়; অচেনা নথি হলে সোজাসুজি বলে দেয়।</span><span class="en-only"><b>Match:</b> code picks the rule card; an unknown document is refused, never guessed.</span></li>
+            <li><span class="bn-only"><b>যাচাই:</b> কোড কার্ডের প্রতিটি নিয়ম মেলায়: তারিখ, আইডি, মোবাইল নম্বর, সঠিক অফিস, স্বাক্ষর।</span><span class="en-only"><b>Check:</b> code applies every rule on the card: dates, IDs, phone numbers, the right office, signatures.</span></li>
+            <li><span class="bn-only"><b>আবার দেখা:</b> Gemma 4 প্রতিটি সমস্যা ছবিতে আবার দেখে নিশ্চিত করে।</span><span class="en-only"><b>Double-check:</b> Gemma 4 looks at the image again; anything it cannot confirm goes to "check yourself".</span></li>
+            <li><span class="bn-only"><b>সমাধান:</b> Gemma 4 শুধু নিয়মের লেখা ব্যবহার করে বাংলা ও ইংরেজিতে সমাধান লেখে।</span><span class="en-only"><b>Fix:</b> Gemma 4 explains each fix in Bangla and English using only the rule's own text.</span></li>
+            <li><span class="bn-only"><b>দরখাস্ত:</b> দরখাস্তের বেলায় Gemma 4 আপনার তথ্য দিয়েই সংশোধিত চিঠি লেখে; কোড পরীক্ষা করে কোনো বানানো আইডি ঢুকল কি না।</span><span class="en-only"><b>Draft:</b> for letters, Gemma 4 rewrites the letter from your own details; code removes any student ID the model made up.</span></li>
+          </ol>
+          <p class="how-rule"><span class="bn-only">Gemma দেখে, কোড সিদ্ধান্ত নেয়।</span><span class="en-only">Gemma sees, code decides.</span></p>
+        </details>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="mini-paper">
+          <span class="mini-line w80"></span><span class="mini-line w55"></span><span class="mini-line w90"></span>
+          <span class="mini-line w70"></span><span class="mini-line w85"></span><span class="mini-line w40"></span>
+          <span class="mini-sig">Rafiya</span>
+          <span class="mini-stamp bad"><span class="bn-only">ফেরত আসবে</span><span class="en-only">Returned</span></span>
+          <span class="mini-stamp good"><span class="bn-only">জমা দিন</span><span class="en-only">Ready</span></span>
+        </div>
+      </div>
     </div>
   </header>
 
   <section class="engine wrap" aria-label="Engine">
-    <p class="engine-label" id="engine-label">মডেল <span class="en">Engine</span></p>
+    <p class="engine-label" id="engine-label"><span class="bn">মডেল</span><span class="en">Engine</span></p>
     <div id="engine-chips" class="chips engine-chips" role="radiogroup" aria-labelledby="engine-label"></div>
     <p id="engine-note" class="engine-note"></p>
   </section>
 
-  <main class="wrap layout">
+  <main class="wrap layout" id="workspace">
     <section class="input-pane" aria-label="Form input">
       <div class="tabs" role="tablist">
-        <button role="tab" id="tab-snap" aria-selected="true" aria-controls="pane-snap">ফর্মের ছবি দিন<span class="en">Photo of a form</span></button>
-        <button role="tab" id="tab-maker" aria-selected="false" aria-controls="pane-maker">ফর্ম বানিয়ে দেখুন<span class="en">Form maker</span></button>
+        <button role="tab" id="tab-snap" aria-selected="true" aria-controls="pane-snap"><span class="bn">ফর্মের ছবি দিন</span><span class="en">Photo of a form</span></button>
+        <button role="tab" id="tab-maker" aria-selected="false" aria-controls="pane-maker"><span class="bn">ফর্ম বানিয়ে দেখুন</span><span class="en">Form maker</span></button>
       </div>
 
       <div id="pane-snap" role="tabpanel" aria-labelledby="tab-snap">
         <label class="drop" for="photo-input">
           <input id="photo-input" type="file" accept="image/*" capture="environment">
-          <span class="drop-title">ছবি তুলুন বা আপলোড করুন</span>
-          <span class="en">Take or upload a photo of the filled form or your application letter</span>
+          <span class="drop-icon" aria-hidden="true"></span>
+          <span class="drop-title"><span class="bn">ছবি তুলুন বা আপলোড করুন</span><span class="en">Take or upload a photo</span></span>
+          <span class="drop-sub"><span class="bn">ভরা ফর্ম বা হাতে লেখা দরখাস্ত, পুরো পাতা ফ্রেমে রাখুন</span><span class="en">A filled form or handwritten letter, whole page in frame</span></span>
         </label>
-        <p class="hint">চেনা ফর্ম ও দরখাস্ত: <span id="known-forms"></span></p>
+        <p class="hint"><span class="bn-only">যা চেনে: </span><span class="en-only">Knows: </span><span id="known-forms"></span></p>
       </div>
 
       <div id="pane-maker" role="tabpanel" aria-labelledby="tab-maker" hidden>
         <div class="field-row">
-          <span id="card-label">কী যাচাই করবেন <span class="en">What to check</span></span>
+          <span id="card-label"><span class="bn">কী যাচাই করবেন</span><span class="en">What to check</span></span>
           <div id="card-chips" class="card-chips" role="radiogroup" aria-labelledby="card-label"></div>
           <p class="card-source" id="card-source"></p>
         </div>
@@ -64,25 +86,26 @@
         <div id="maker-signatures" class="maker-signatures"></div>
         <label class="check-row" id="photo-row">
           <input type="checkbox" id="photo-toggle" checked>
-          <span>ছবি লাগানো আছে <span class="en">Photo attached</span></span>
+          <span><span class="bn">ছবি লাগানো আছে</span><span class="en">Photo attached</span></span>
         </label>
         <div class="maker-actions">
-          <button type="button" class="ghost" id="plant-mistakes">৩টি ভুল বসান<span class="en">Add 3 mistakes</span></button>
-          <button type="button" class="ghost" id="fill-correct">সব ঠিকঠাক করুন<span class="en">Fill it correctly</span></button>
+          <button type="button" class="ghost" id="plant-mistakes"><span class="bn">৩টি ভুল বসান</span><span class="en">Add 3 mistakes</span></button>
+          <button type="button" class="ghost" id="fill-correct"><span class="bn">সব ঠিকঠাক করুন</span><span class="en">Fill it correctly</span></button>
         </div>
       </div>
 
-      <figure class="sheet" id="sheet" hidden>
-        <img id="preview" alt="The form that will be checked">
-        <div class="stamp" id="stamp" hidden></div>
-      </figure>
-
-      <button type="button" class="primary" id="check-btn" disabled>ফর্ম যাচাই করুন<span class="en">Check this form</span></button>
+      <div class="dock" id="dock">
+        <figure class="sheet" id="sheet" hidden>
+          <img id="preview" alt="The document that will be checked">
+          <div class="stamp" id="stamp" hidden></div>
+        </figure>
+        <button type="button" class="primary" id="check-btn" disabled><span class="bn">যাচাই করুন</span><span class="en">Check it</span></button>
+      </div>
     </section>
 
     <section class="output-pane" aria-label="Check result">
       <div class="slip">
-        <h2>যাচাইয়ের ধাপ <span class="en">How the check runs</span></h2>
+        <h2><span class="bn">যাচাইয়ের ধাপ</span><span class="en">How the check runs</span></h2>
         <ol id="trace" class="trace" aria-live="polite"></ol>
       </div>
       <div id="result" class="result" aria-live="polite"></div>
@@ -90,9 +113,9 @@
   </main>
 
   <footer class="wrap foot">
-    <p>নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। <span class="en">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
+    <p><span class="bn-only">নমুনা নিয়ম: এই অ্যাপের অফিস, ফি আর নিয়মগুলো উদাহরণ, IIUC-এর অফিসিয়াল নিয়ম নয়। চলে open-weights Gemma 4 দিয়ে।</span><span class="en-only">Sample rules for demonstration, not official IIUC policy. Runs on open-weights Gemma 4.</span></p>
   </footer>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=3"></script>
 </body>
 </html>

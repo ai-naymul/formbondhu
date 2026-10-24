@@ -1,41 +1,55 @@
 "use strict";
 
 const $ = (sel) => document.querySelector(sel);
-const STORE_KEY = "formbondhu.engine";
+const ENGINE_KEY = "formbondhu.engine";
+const LANG_KEY = "formbondhu.lang";
 const STEP_ORDER = ["read", "match", "audit", "verify", "explain", "draft"];
 const STEP_TEXT = {
-  read: ["ফর্ম পড়া", "Read the form"],
+  read: ["ফর্ম পড়া", "Read the document"],
   match: ["নিয়মের কার্ড মেলানো", "Match the rule card"],
   audit: ["প্রতিটি নিয়ম যাচাই", "Check every rule"],
   verify: ["প্রতিটি সমস্যা আবার দেখা", "Double-check each problem"],
-  explain: ["বাংলায় সমাধান লেখা", "Write fixes in Bangla"],
+  explain: ["সমাধান লেখা", "Write the fixes"],
   draft: ["সংশোধিত দরখাস্ত লেখা", "Draft the corrected letter"],
 };
 const ENGINE_TEXT = {
-  aistudio: "Gemma 4 চলছে Google AI Studio-তে (open-weights model, hosted free API)",
-  ollama: "Gemma 4 চলছে আপনার নিজের কম্পিউটারে, Ollama দিয়ে (open-weights model, runs locally)",
+  aistudio: ["Gemma 4 চলছে Google AI Studio-তে (open-weights model, hosted free API)", "Gemma 4 is running on Google AI Studio (open-weights model, hosted free API)"],
+  ollama: ["Gemma 4 চলছে আপনার নিজের কম্পিউটারে, Ollama দিয়ে", "Gemma 4 is running on your own computer through Ollama"],
 };
 const VERDICT = {
-  problems: { cls: "bad", bn: "ফেরত আসবে", en: (n) => `${n} problem${n === 1 ? "" : "s"} found` },
-  check_manually: { cls: "warn", bn: "নিজে একবার দেখুন", en: () => "Check these yourself" },
-  ready: { cls: "good", bn: "জমা দেওয়ার জন্য প্রস্তুত", en: () => "Ready to submit" },
-  unknown_form: { cls: "unknown", bn: "অচেনা ফর্ম", en: () => "Unknown form" },
+  problems: { cls: "bad", bn: (n) => `${bnDigits(n)}টি কারণে ফেরত আসবে`, en: (n) => `Will be returned: ${n} problem${n === 1 ? "" : "s"}` },
+  check_manually: { cls: "warn", bn: () => "নিজে একবার দেখুন", en: () => "Check these yourself" },
+  ready: { cls: "good", bn: () => "জমা দেওয়ার জন্য প্রস্তুত", en: () => "Ready to submit" },
+  unknown_form: { cls: "unknown", bn: () => "অচেনা ফর্ম", en: () => "Unknown document" },
+};
+const STAMP_TEXT = {
+  problems: ["ফেরত আসবে", "Will be returned"],
+  check_manually: ["নিজে দেখুন", "Check yourself"],
+  ready: ["জমা দেওয়ার জন্য প্রস্তুত", "Ready to submit"],
+  unknown_form: ["অচেনা ফর্ম", "Unknown document"],
 };
 
 const state = { cards: [], engines: null, engineValue: "", engineNotes: [], cardId: null, blob: null, pads: {}, previewUrl: null };
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const bnDigits = (n) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
+/* bi(): Bangla first with English as a quiet second line; in English mode only the English shows.
+   one(): exactly one language at a time. Both take already-escaped HTML. */
+const bi = (bn, en) => `<span class="bn">${bn}</span><span class="en">${en}</span>`;
+const one = (bn, en) => `<span class="bn-only">${bn}</span><span class="en-only">${en}</span>`;
+const lang = () => document.documentElement.dataset.lang || "bn";
 
-function store(value) {
+function store(key, value) {
   try {
-    if (value === undefined) return localStorage.getItem(STORE_KEY);
-    localStorage.setItem(STORE_KEY, value);
+    if (value === undefined) return localStorage.getItem(key);
+    localStorage.setItem(key, value);
   } catch (_) { /* storage can be blocked; the choice just won't be remembered */ }
   return null;
 }
 
 async function init() {
+  setLang(store(LANG_KEY) || "bn", false);
+  for (const btn of document.querySelectorAll(".lang-switch button")) btn.addEventListener("click", () => setLang(btn.dataset.lang));
   const [cards, engines] = await Promise.all([
     fetch("/api/cards").then((r) => r.json()),
     fetch("/api/engines").then((r) => r.json()),
@@ -43,18 +57,28 @@ async function init() {
   state.cards = cards;
   state.engines = engines;
   renderEngines();
-  $("#known-forms").textContent = cards.map((c) => c.title_bn).join(", ");
+  $("#known-forms").innerHTML = cards.map((c) => one(esc(c.title_bn), esc(c.title_en))).join(", ");
   bindTabs();
   bindSnap();
   bindMaker();
   $("#check-btn").addEventListener("click", runCheck);
+  $("#cta-snap").addEventListener("click", () => { showTab("snap"); $("#photo-input").click(); });
+  $("#cta-sample").addEventListener("click", trySample);
+}
+
+function setLang(value, remember = true) {
+  const html = document.documentElement;
+  html.dataset.lang = value;
+  html.lang = value;
+  for (const btn of document.querySelectorAll(".lang-switch button")) btn.setAttribute("aria-checked", String(btn.dataset.lang === value));
+  if (remember) store(LANG_KEY, value);
 }
 
 /* ---------- engine choice ---------- */
 
 function renderEngines() {
   const box = $("#engine-chips");
-  const saved = store();
+  const saved = store(ENGINE_KEY);
   const choices = [];
   box.innerHTML = "";
   state.engineNotes = [];
@@ -67,7 +91,7 @@ function renderEngines() {
       chip.setAttribute("role", "radio");
       chip.disabled = !engine.available;
       chip.dataset.value = value;
-      chip.innerHTML = `<span class="dot ${engine.available ? "on" : "off"}" aria-hidden="true"></span><span>${esc(engine.label)}<span class="en">${esc(model || "not available here")}</span></span>`;
+      chip.innerHTML = `<span class="dot ${engine.available ? "on" : "off"}" aria-hidden="true"></span><span>${esc(engine.label)}<span class="sub">${esc(model || "not available here")}</span></span>`;
       chip.addEventListener("click", () => selectEngine(value));
       box.append(chip);
       if (model) choices.push(value);
@@ -80,13 +104,13 @@ function renderEngines() {
 
 function selectEngine(value, remember = true) {
   state.engineValue = value;
-  if (remember && value) store(value);
+  if (remember && value) store(ENGINE_KEY, value);
   for (const chip of document.querySelectorAll(".engine-chip")) {
     chip.setAttribute("aria-checked", String(Boolean(value) && chip.dataset.value === value));
   }
   const engine = selectedEngine();
-  const lines = [engine ? ENGINE_TEXT[engine.backend] : "কোনো মডেল চালু নেই। No engine is available.", ...state.engineNotes];
-  $("#engine-note").innerHTML = lines.map((l, i) => (i ? `<span class="en">${esc(l)}</span>` : esc(l))).join("");
+  const main = engine ? one(...ENGINE_TEXT[engine.backend].map(esc)) : one("কোনো মডেল চালু নেই।", "No engine is available.");
+  $("#engine-note").innerHTML = main + state.engineNotes.map((n) => `<span class="note-line">${esc(n)}</span>`).join("");
   $("#check-btn").disabled = !state.blob || !engine;
 }
 
@@ -99,17 +123,25 @@ function selectedEngine() {
 /* ---------- tabs ---------- */
 
 function bindTabs() {
-  const tabs = [["#tab-snap", "#pane-snap"], ["#tab-maker", "#pane-maker"]];
-  for (const [tabSel, paneSel] of tabs) {
-    $(tabSel).addEventListener("click", async () => {
-      for (const [t, p] of tabs) {
-        $(t).setAttribute("aria-selected", String(t === tabSel));
-        $(p).hidden = p !== paneSel;
-      }
-      setBlob(null);
-      if (paneSel === "#pane-maker") await refreshMakerPreview();
-    });
+  $("#tab-snap").addEventListener("click", () => showTab("snap"));
+  $("#tab-maker").addEventListener("click", () => showTab("maker"));
+}
+
+async function showTab(name) {
+  for (const t of ["snap", "maker"]) {
+    $(`#tab-${t}`).setAttribute("aria-selected", String(t === name));
+    $(`#pane-${t}`).hidden = t !== name;
   }
+  setBlob(null);
+  if (name === "maker") await refreshMakerPreview();
+}
+
+async function trySample() {
+  await showTab("maker");
+  selectCard(state.cards.some((c) => c.id === "transcript_letter") ? "transcript_letter" : state.cards[0].id, false);
+  plantMistakes(currentCard());
+  await refreshMakerPreview();
+  $("#dock").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /* ---------- photo path ---------- */
@@ -162,14 +194,14 @@ function bindMaker() {
     if (!cards.length) continue;
     const group = document.createElement("div");
     group.className = "chip-group";
-    group.innerHTML = `<p class="chip-group-title">${bn} <span class="en">${en}</span></p>`;
+    group.innerHTML = `<p class="chip-group-title">${one(bn, en)}</p>`;
     for (const card of cards) {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "chip card-chip";
       chip.setAttribute("role", "radio");
       chip.dataset.id = card.id;
-      chip.innerHTML = `<span>${esc(card.title_bn)}<span class="en">${esc(card.title_en)}</span></span><span class="aud">${esc(card.audience_bn || "")}</span>`;
+      chip.innerHTML = `<span class="card-title">${bi(esc(card.title_bn), esc(card.title_en))}</span><span class="aud">${one(esc(card.audience_bn || ""), esc(card.audience_en || ""))}</span>`;
       chip.addEventListener("click", () => selectCard(card.id));
       group.append(chip);
     }
@@ -192,12 +224,18 @@ function selectCard(id, refresh = true) {
 
 const currentCard = () => state.cards.find((c) => c.id === state.cardId) || state.cards[0];
 
+function signatureName(card) {
+  const field = card.fields.find((f) => f.key === "student_name" || f.key === "sender_name");
+  const words = (field ? field.sample : "Signature").split(/\s+/).filter((w) => !/^md\.?$/i.test(w));
+  return words[0] || "Signature";
+}
+
 function buildMaker(card) {
   const fields = $("#maker-fields");
   fields.innerHTML = "";
   for (const f of card.fields) {
     const label = document.createElement("label");
-    label.innerHTML = `${esc(f.label_bn)}<span class="en">${esc(f.label_en)}</span>`;
+    label.innerHTML = bi(esc(f.label_bn), esc(f.label_en));
     // Long values get a wrapping box across the full width, so nothing is cut off inside the field.
     const wide = f.sample.length > 22;
     const input = document.createElement(wide ? "textarea" : "input");
@@ -215,14 +253,14 @@ function buildMaker(card) {
   for (const s of card.signatures) {
     const wrap = document.createElement("div");
     wrap.className = "sig";
-    wrap.innerHTML = `<span>${esc(s.label_bn)} <span class="en">${esc(s.label_en)}: আঙুল বা মাউস দিয়ে স্বাক্ষর করুন / sign with finger or mouse</span></span>`;
+    wrap.innerHTML = `<span>${bi(esc(s.label_bn), esc(s.label_en))}<span class="sig-hint">${one("আঙুল বা মাউস দিয়ে স্বাক্ষর করুন", "Sign with your finger or mouse")}</span></span>`;
     const padWrap = document.createElement("div");
     padWrap.className = "sig-pad-wrap";
     const canvas = document.createElement("canvas");
     const clear = document.createElement("button");
     clear.type = "button";
     clear.className = "sig-clear";
-    clear.textContent = "মুছুন / Clear";
+    clear.innerHTML = one("মুছুন", "Clear");
     padWrap.append(canvas, clear);
     wrap.append(padWrap);
     sigs.append(wrap);
@@ -230,7 +268,8 @@ function buildMaker(card) {
   }
   $("#photo-row").hidden = !card.photo_required;
   $("#photo-toggle").checked = true;
-  for (const pad of Object.values(state.pads)) pad.sample();
+  const name = signatureName(card);
+  for (const pad of Object.values(state.pads)) pad.sample(name);
 }
 
 function plantMistakes(card) {
@@ -280,21 +319,29 @@ function makePad(canvas, clearBtn) {
   };
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
+  const drawName = (name) => {
+    size();
+    ctx.save();
+    ctx.fillStyle = "#1f3a93";
+    ctx.font = `${30 * ratio}px "Homemade Apple", "Caveat", cursive`;
+    ctx.translate(canvas.width * 0.08, canvas.height * 0.68);
+    ctx.rotate(-0.06);
+    ctx.fillText(name, 0, 0);
+    ctx.restore();
+  };
   const pad = {
     canvas,
     get inked() { return inked; },
     clear() { size(); inked = false; },
-    sample() {
-      // A pre-drawn squiggle so "Fill it correctly" starts from a signed form; judges can clear and re-sign.
-      size();
-      const w = canvas.width, h = canvas.height;
-      ctx.beginPath();
-      ctx.moveTo(w * 0.08, h * 0.65);
-      ctx.bezierCurveTo(w * 0.18, h * 0.05, w * 0.25, h * 0.95, w * 0.36, h * 0.45);
-      ctx.bezierCurveTo(w * 0.45, h * 0.1, w * 0.52, h * 0.8, w * 0.62, h * 0.5);
-      ctx.bezierCurveTo(w * 0.7, h * 0.3, w * 0.8, h * 0.7, w * 0.9, h * 0.35);
-      ctx.stroke();
+    sample(name) {
+      // A cursive name like a real student signature; judges can clear it and sign themselves.
+      drawName(name);
       inked = true;
+      document.fonts.load(`30px "Homemade Apple"`).then(() => {
+        if (!inked) return;
+        drawName(name);
+        refreshMakerPreview();
+      }).catch(() => {});
     },
   };
   clearBtn.addEventListener("click", () => { pad.clear(); refreshMakerPreview(); });
@@ -462,7 +509,8 @@ function renderLetterCanvas(card, values, HAND) {
     const y = 70 + (i + 1) * lineH;
     if (text === "@sig") {
       const pad = state.pads.student;
-      if (pad && pad.inked) ctx.drawImage(pad.canvas, left, y - 40, 230, 52);
+      // Keep the pad's proportions so the signature stays as large as it was drawn.
+      if (pad && pad.inked) ctx.drawImage(pad.canvas, left, y - 52, 380, 380 * pad.canvas.height / pad.canvas.width);
       return;
     }
     ctx.fillText(text, left, y);
@@ -472,6 +520,15 @@ function renderLetterCanvas(card, values, HAND) {
 
 /* ---------- running a check ---------- */
 
+const STATE_TEXT = {
+  waiting: one("অপেক্ষায়", "Waiting"),
+  running: one("চলছে…", "Running…"),
+  done: one("হয়েছে ✓", "Done ✓"),
+  skipped: one("দরকার হয়নি", "Not needed"),
+  lettersOnly: one("শুধু দরখাস্তে", "Letters only"),
+  failed: one("ব্যর্থ ✗", "Failed ✗"),
+};
+
 function resetTrace() {
   const trace = $("#trace");
   trace.innerHTML = "";
@@ -479,16 +536,16 @@ function resetTrace() {
     const li = document.createElement("li");
     li.id = `step-${id}`;
     li.className = "waiting";
-    li.innerHTML = `<span class="t-title">${STEP_TEXT[id][0]}<span class="en">${STEP_TEXT[id][1]}</span></span>
-      <span class="t-state">অপেক্ষায়</span><span class="t-meta"></span>`;
+    li.innerHTML = `<span class="t-title">${bi(STEP_TEXT[id][0], STEP_TEXT[id][1])}</span>
+      <span class="t-state">${STATE_TEXT.waiting}</span><span class="t-meta"></span>`;
     trace.append(li);
   }
 }
 
 function whoRan(event) {
-  if (event.kind === "code") return `<span class="who">কোড</span> (${esc(event.tool)}), নিয়ম অনুযায়ী, কোনো AI নয়`;
+  if (event.kind === "code") return `<span class="who">${one("কোড", "Code")}</span> (${esc(event.tool)}), ${one("নিয়ম অনুযায়ী, কোনো AI নয়", "rule-based, no AI")}`;
   const where = event.backend === "ollama" ? "local Ollama" : "Google AI Studio";
-  return `<span class="who">Gemma 4 · ${esc(event.model)}</span> on ${where}`;
+  return `<span class="who">Gemma 4 · ${esc(event.model)}</span>, ${where}`;
 }
 
 function onStep(event) {
@@ -497,18 +554,18 @@ function onStep(event) {
   const meta = li.querySelector(".t-meta");
   if (event.status === "start") {
     li.className = "running";
-    li.querySelector(".t-state").textContent = "চলছে…";
+    li.querySelector(".t-state").innerHTML = STATE_TEXT.running;
     meta.innerHTML = whoRan(event);
     return;
   }
   li.className = "done";
-  li.querySelector(".t-state").textContent = "হয়েছে ✓";
+  li.querySelector(".t-state").innerHTML = STATE_TEXT.done;
   const ms = event.ms ? `, ${(event.ms / 1000).toFixed(1)} s` : "";
-  const retried = event.retried ? ", ফরম্যাট ঠিক করতে একবার আবার চেষ্টা" : "";
+  const retried = event.retried ? `, ${one("ফরম্যাট ঠিক করতে আবার চেষ্টা", "retried once to fix the format")}` : "";
   meta.innerHTML = whoRan(event) + ms + retried;
   const details = document.createElement("details");
-  details.innerHTML = `<summary>মডেল/কোডের আসল আউটপুট দেখুন (raw output)</summary><pre>${esc(JSON.stringify(event.output, null, 2))}</pre>`;
-  li.append(details);
+  details.innerHTML = `<summary>${one("আসল আউটপুট", "Raw output")}</summary><pre>${esc(JSON.stringify(event.output, null, 2))}</pre>`;
+  meta.append(details);
 }
 
 async function runCheck() {
@@ -549,7 +606,7 @@ async function runCheck() {
       }
     }
   } catch (err) {
-    showError(`নেটওয়ার্ক সমস্যা। Network problem: ${err.message}`);
+    showError(`Network problem: ${err.message}`);
   } finally {
     btn.disabled = !state.blob;
   }
@@ -564,16 +621,16 @@ function handleEvent(event) {
 function showError(message) {
   for (const li of document.querySelectorAll("#trace li.running")) {
     li.className = "done";
-    li.querySelector(".t-state").textContent = "ব্যর্থ ✗";
+    li.querySelector(".t-state").innerHTML = STATE_TEXT.failed;
   }
-  $("#result").innerHTML = `<div class="error"><strong>যাচাই শেষ করা যায়নি।</strong> The check could not finish.<br>${esc(message)}</div>`;
+  $("#result").innerHTML = `<div class="error"><strong>${one("যাচাই শেষ করা যায়নি।", "The check could not finish.")}</strong><br>${esc(message)}</div>`;
 }
 
-function stamp(status, count) {
+function stamp(status) {
   const v = VERDICT[status];
   const el = $("#stamp");
   el.className = `stamp ${v.cls}`;
-  el.innerHTML = `${v.bn}<span class="en">${esc(v.en(count))}</span>`;
+  el.innerHTML = one(...STAMP_TEXT[status]);
   el.hidden = false;
 }
 
@@ -582,80 +639,77 @@ function renderResult(r) {
     const li = $(`#step-${id}`);
     if (li && li.className === "waiting") {
       li.className = "skipped";
-      li.querySelector(".t-state").textContent = id === "draft" && r.card?.kind !== "letter" ? "শুধু দরখাস্তে" : "দরকার হয়নি";
+      li.querySelector(".t-state").innerHTML = id === "draft" && r.card?.kind !== "letter" ? STATE_TEXT.lettersOnly : STATE_TEXT.skipped;
     }
   }
   const count = (r.problems || []).length;
-  stamp(r.status, count);
+  stamp(r.status);
   const v = VERDICT[r.status];
   const parts = [];
   if (r.status === "unknown_form") {
-    parts.push(`<p class="verdict">${v.bn}</p><p class="verdict-en">FormBondhu only checks forms it has rules for, so it does not guess. It read the title as "${esc(r.form_title)}".</p>`);
-    parts.push(`<h3>যে ফর্মগুলো চেনে<span class="en">Forms it knows</span></h3><ul class="docs">${r.known.map((k) => `<li>${esc(k.title_bn)} <span class="en">${esc(k.title_en)}</span></li>`).join("")}</ul>`);
+    parts.push(`<p class="verdict unknown">${one(v.bn(), v.en())}</p>
+      <p class="verdict-sub">${one(`ফর্মবন্ধু শুধু যেসব নথির নিয়ম জানে সেগুলোই যাচাই করে, তাই আন্দাজ করে না। শিরোনাম পড়েছে: “${esc(r.form_title)}”।`,
+        `FormBondhu only checks documents it has rules for, so it does not guess. It read the title as “${esc(r.form_title)}”.`)}</p>`);
+    parts.push(`<h3>${one("যে নথিগুলো চেনে", "Documents it knows")}</h3><ul class="docs">${r.known.map((k) => `<li>${bi(esc(k.title_bn), esc(k.title_en))}</li>`).join("")}</ul>`);
   } else {
-    const headline = r.status === "problems" ? `${bnDigits(count)}টি কারণে ফর্মটি ফেরত আসবে` : v.bn;
-    parts.push(`<span class="badge">নমুনা নিয়ম / sample rules</span>`);
-    parts.push(`<p class="verdict ${v.cls}">${headline}</p><p class="verdict-en">${esc(r.card.title_en)}: ${esc(v.en(count))}</p>`);
-    if ("speechSynthesis" in window) parts.push(`<button type="button" class="ghost listen-btn" id="listen">শুনুন<span class="en">Read the result aloud</span></button>`);
-    if (count) {
-      parts.push(`<h3>যা ঠিক করতে হবে<span class="en">Fix before you go</span></h3><ul class="problems">${r.problems.map(problemItem).join("")}</ul>`);
-    }
+    parts.push(`<span class="badge">${one("নমুনা নিয়ম", "Sample rules")}</span>`);
+    parts.push(`<p class="verdict ${v.cls}">${one(v.bn(count), v.en(count))}</p><p class="verdict-sub">${one(esc(r.card.title_bn), esc(r.card.title_en))}</p>`);
+    if ("speechSynthesis" in window) parts.push(`<button type="button" class="ghost listen-btn" id="listen">${one("শুনুন", "Read aloud")}</button>`);
+    if (count) parts.push(`<h3>${one("যা ঠিক করতে হবে", "Fix before you go")}</h3><ul class="problems">${r.problems.map(problemItem).join("")}</ul>`);
     if (r.draft) {
       const holes = (r.draft.placeholders || []).length
-        ? `<p class="fix-en">বন্ধনীর [ ] জায়গাগুলো নিজে পূরণ করুন। Fill in the parts in square brackets yourself.</p>` : "";
-      parts.push(`<h3>সংশোধিত দরখাস্ত<span class="en">Corrected letter, written only from your own details</span></h3>
-        <div class="letter-box"><button type="button" class="ghost copy-btn" id="copy-letter">কপি করুন<span class="en">Copy letter</span></button>
-        <pre class="letter">${esc(r.draft.letter)}</pre>${holes}</div>`);
+        ? `<p class="letter-note">${one("বন্ধনীর [ ] জায়গাগুলো নিজে পূরণ করুন।", "Fill in the parts in square brackets yourself.")}</p>` : "";
+      parts.push(`<h3>${one("সংশোধিত দরখাস্ত", "Corrected letter")}<span class="h3-sub">${one("শুধু আপনার দেওয়া তথ্য দিয়ে লেখা", "written only from your own details")}</span></h3>
+        <div class="letter-box"><button type="button" class="ghost copy-btn" id="copy-letter">${one("কপি করুন", "Copy")}</button>
+        <pre class="letter">${esc(r.draft.letter).replace(/\[([^\]]+)\]/g, '<mark class="hole">[$1]</mark>')}</pre>${holes}</div>`);
     }
     if ((r.manual || []).length) {
-      parts.push(`<h3>নিজে একবার দেখুন<span class="en">The second look could not confirm these</span></h3><ul class="problems manual">${r.manual.map(problemItem).join("")}</ul>`);
+      parts.push(`<h3>${one("নিজে একবার দেখুন", "Check these yourself")}<span class="h3-sub">${one("দ্বিতীয়বার দেখে নিশ্চিত হওয়া যায়নি", "the second look could not confirm them")}</span></h3><ul class="problems manual">${r.manual.map(problemItem).join("")}</ul>`);
     }
     if (r.attachments.length) {
-      parts.push(`<h3>সাথে যা নিতে হবে<span class="en">Bring with it</span></h3><ul class="docs">${r.attachments.map((a) => `<li>${esc(a.bn)} <span class="en">${esc(a.en)}</span></li>`).join("")}</ul>`);
+      parts.push(`<h3>${one("সাথে যা নিতে হবে", "Bring with it")}</h3><ul class="docs">${r.attachments.map((a) => `<li>${bi(esc(a.bn), esc(a.en))}</li>`).join("")}</ul>`);
     }
-    parts.push(`<h3>কোন অফিসে, কোন ক্রমে<span class="en">Where to go, in order</span></h3><ol class="route">${r.route.map((s) => `<li><span class="office">${esc(s.office_bn)} <span class="en">${esc(s.office_en)}</span></span><span>${esc(s.task_bn)} <span class="en">${esc(s.task_en)}</span></span></li>`).join("")}</ol>`);
+    parts.push(`<h3>${one("কোন অফিসে, কোন ক্রমে", "Where to go, in order")}</h3><ol class="route">${r.route.map((s) => `<li><span class="office">${bi(esc(s.office_bn), esc(s.office_en))}</span><span>${bi(esc(s.task_bn), esc(s.task_en))}</span></li>`).join("")}</ol>`);
     if ((r.passed || []).length) {
-      parts.push(`<details class="passed"><summary>${bnDigits(r.passed.length)}টি নিয়ম ঠিক আছে (${r.passed.length} rules passed)</summary><ul>${r.passed.map((p) => `<li>${esc(p.rule_id)}: ${esc(p.label_bn)} / ${esc(p.label_en)}</li>`).join("")}</ul></details>`);
+      const n = r.passed.length;
+      parts.push(`<details class="passed"><summary>${one(`${bnDigits(n)}টি নিয়ম ঠিক আছে`, `${n} rules passed`)}</summary><ul>${r.passed.map((p) => `<li>${esc(p.rule_id)}: ${one(esc(p.label_bn), esc(p.label_en))}</li>`).join("")}</ul></details>`);
     }
   }
   const where = r.engine.backend === "ollama" ? "local Ollama" : "Google AI Studio";
-  parts.push(`<p class="run-meta">মডেল: Gemma 4 (${esc(r.engine.model)}) on ${where}. মোট সময় ${(r.ms / 1000).toFixed(1)} সেকেন্ড.${r.card?.source ? `<br>${esc(r.card.source)}` : ""}</p>`);
+  const secs = (r.ms / 1000).toFixed(1);
+  parts.push(`<p class="run-meta">${one(`মডেল: Gemma 4 (${esc(r.engine.model)}), ${where}। মোট সময় ${secs} সেকেন্ড।`, `Model: Gemma 4 (${esc(r.engine.model)}) on ${where}. Total ${secs} s.`)}${r.card?.source ? `<br>${esc(r.card.source)}` : ""}</p>`);
   $("#result").innerHTML = parts.join("");
   const listen = $("#listen");
-  if (listen) listen.addEventListener("click", () => speakResult(r, headline(r)));
+  if (listen) listen.addEventListener("click", () => speakResult(r));
   const copy = $("#copy-letter");
   if (copy) {
     copy.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(r.draft.letter); copy.firstChild.textContent = "কপি হয়েছে"; } catch (_) { copy.firstChild.textContent = "কপি করা যায়নি"; }
+      try { await navigator.clipboard.writeText(r.draft.letter); copy.innerHTML = one("কপি হয়েছে", "Copied"); } catch (_) { copy.innerHTML = one("কপি করা যায়নি", "Copy failed"); }
     });
   }
 }
 
-function headline(r) {
-  const count = (r.problems || []).length;
-  return r.status === "problems" ? `${bnDigits(count)}টি কারণে ফর্মটি ফেরত আসবে` : VERDICT[r.status].bn;
-}
-
 /* Reads the verdict and each fix aloud for students who cannot read the screen easily.
-   Uses a Bangla voice when the device has one, otherwise the English version of each fix. */
-function speakResult(r, title) {
+   Uses a Bangla voice when the device has one and Bangla is selected, otherwise English. */
+function speakResult(r) {
   speechSynthesis.cancel();
-  const voices = speechSynthesis.getVoices();
-  const bnVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("bn"));
+  const v = VERDICT[r.status];
   const items = [...(r.problems || []), ...(r.manual || [])];
-  const text = bnVoice
-    ? [title, ...items.map((p) => `${p.label_bn}: ${p.fix_bn}`)].join("। ")
-    : [VERDICT[r.status].en(items.length), ...items.map((p) => `${p.label_en}: ${p.fix_en}`)].join(". ");
+  const bnVoice = speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith("bn"));
+  const useBn = lang() === "bn" && bnVoice;
+  const text = useBn
+    ? [v.bn(items.length), ...items.map((p) => `${p.label_bn}: ${p.fix_bn}`)].join("। ")
+    : [v.en(items.length), ...items.map((p) => `${p.label_en}: ${p.fix_en}`)].join(". ");
   const u = new SpeechSynthesisUtterance(text);
-  if (bnVoice) { u.voice = bnVoice; u.lang = bnVoice.lang; } else { u.lang = "en-US"; }
+  if (useBn) { u.voice = bnVoice; u.lang = bnVoice.lang; } else { u.lang = "en-US"; }
   u.rate = 0.95;
   speechSynthesis.speak(u);
 }
 
 function problemItem(p) {
-  const seen = p.seen ? `<p class="seen">Gemma যা দেখেছে: “${esc(p.seen)}”</p>` : "";
-  return `<li><div class="where"><span>${esc(p.label_bn)} / ${esc(p.label_en)}</span><span class="rid">${esc(p.rule_id)}</span></div>
-    <p class="fix">${esc(p.fix_bn)}</p><p class="fix-en">${esc(p.fix_en)}</p>${seen}</li>`;
+  const seen = p.seen ? `<p class="seen">${one("Gemma যা দেখেছে", "What Gemma saw")}: “${esc(p.seen)}”</p>` : "";
+  return `<li><div class="where"><span>${one(esc(p.label_bn), esc(p.label_en))}</span><span class="rid">${esc(p.rule_id)}</span></div>
+    <p class="fix">${bi(esc(p.fix_bn), esc(p.fix_en))}</p>${seen}</li>`;
 }
 
-init().catch((err) => showError(`অ্যাপ চালু হয়নি। Could not start: ${err.message}`));
+init().catch((err) => showError(`Could not start: ${err.message}`));

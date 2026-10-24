@@ -1,11 +1,66 @@
 {
-  "_source": "English letters: codeshack.io/text-to-handwriting (lined paper, blue ink). Bangla letters: Galada handwriting-style font on lined paper. Text from demo/HANDWRITING.md.",
-  "letter1_mistakes__shadows_into_light.png": {"card": "transcript_letter", "expected": ["TL-1", "TL-2", "TL-5", "TL-7"]},
-  "letter1_mistakes__indie_flower.png": {"card": "transcript_letter", "expected": ["TL-1", "TL-2", "TL-5", "TL-7"]},
-  "letter1_mistakes__homemade_apple.png": {"card": "transcript_letter", "expected": ["TL-1", "TL-2", "TL-5", "TL-7"]},
-  "letter3_correct__shadows_into_light.png": {"card": "transcript_letter", "expected": []},
-  "letter3_correct__indie_flower.png": {"card": "transcript_letter", "expected": []},
-  "letter3_correct__homemade_apple.png": {"card": "transcript_letter", "expected": []},
-  "letter2_mistakes__galada.png": {"card": "leave_letter", "expected": ["LV-1", "LV-2", "LV-3"]},
-  "letter2_correct__galada.png": {"card": "leave_letter", "expected": []}
+  "_source": "English letters: codeshack.io/text-to-handwriting (lined paper, blue ink). Bangla letters: Galada handwriting-style font on lined paper, signed either with a single wavy pen line or a cursive name. Text from demo/HANDWRITING.md.",
+  "letter1_mistakes__shadows_into_light.png": {
+    "card": "transcript_letter",
+    "expected": [
+      "TL-1",
+      "TL-2",
+      "TL-5",
+      "TL-7"
+    ]
+  },
+  "letter1_mistakes__indie_flower.png": {
+    "card": "transcript_letter",
+    "expected": [
+      "TL-1",
+      "TL-2",
+      "TL-5",
+      "TL-7"
+    ]
+  },
+  "letter1_mistakes__homemade_apple.png": {
+    "card": "transcript_letter",
+    "expected": [
+      "TL-1",
+      "TL-2",
+      "TL-5",
+      "TL-7"
+    ]
+  },
+  "letter3_correct__shadows_into_light.png": {
+    "card": "transcript_letter",
+    "expected": []
+  },
+  "letter3_correct__indie_flower.png": {
+    "card": "transcript_letter",
+    "expected": []
+  },
+  "letter3_correct__homemade_apple.png": {
+    "card": "transcript_letter",
+    "expected": []
+  },
+  "letter2_mistakes__galada_wavyline.png": {
+    "card": "leave_letter",
+    "expected": [
+      "LV-1",
+      "LV-2",
+      "LV-3"
+    ]
+  },
+  "letter2_mistakes__galada_cursivename.png": {
+    "card": "leave_letter",
+    "expected": [
+      "LV-1",
+      "LV-2",
+      "LV-3"
+    ]
+  },
+  "letter2_correct__galada_wavyline.png": {
+    "card": "leave_letter",
+    "expected": []
+  },
+  "letter2_correct__galada_cursivename.png": {
+    "card": "leave_letter",
+    "expected": []
+  }
 }
